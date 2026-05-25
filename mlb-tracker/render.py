@@ -72,3 +72,7 @@ def update_dynamic_pregame(img, state):
         state.pregame_game,
         state.pregame_seconds_remaining or 0,
     )
+
+
+def blank_dynamic_pregame(img):
+    return layout_pregame.clear_countdown(img)

@@ -64,6 +64,7 @@ FULL_REFRESH_INTERVAL = 15 * 60
 PREGAME_WINDOW_SECONDS = 10 * 60
 PREGAME_POST_START_GRACE_SECONDS = 10 * 60
 PREGAME_LIVE_CHECK_INTERVAL = 5
+PREGAME_API_POLL_LEAD_SECONDS = 15
 BOOT_DELAY = 0
 
 
@@ -72,6 +73,18 @@ def _seconds_until_start(start_utc, now_utc=None, clamp=True):
         now_utc = datetime.now(timezone.utc)
     seconds = math.ceil((start_utc - now_utc).total_seconds())
     return max(0, seconds) if clamp else seconds
+
+
+def _pregame_seconds_snapshot():
+    with _state_lock:
+        if not state.pregame_mode:
+            return None
+        return state.pregame_seconds_remaining
+
+
+def _pregame_should_focus_countdown():
+    seconds = _pregame_seconds_snapshot()
+    return seconds is not None and seconds > PREGAME_API_POLL_LEAD_SECONDS
 
 
 # ---------------------------------------------------------------------------
@@ -536,7 +549,7 @@ def _maybe_enter_live_from_pregame(now=None):
             not state.pregame_mode
             or not state.pregame_game
             or state.pregame_seconds_remaining is None
-            or state.pregame_seconds_remaining > 0
+            or state.pregame_seconds_remaining > PREGAME_API_POLL_LEAD_SECONDS
         ):
             return
 
@@ -899,8 +912,13 @@ def _do_render(force_full=False):
             clear_first = True
 
         if do_full:
+            display_img = img
+            if screen_name == "pregame":
+                display_img = img.copy()
+                render.blank_dynamic_pregame(display_img)
+
             display_waveshare.show_full(
-                img,
+                display_img,
                 invert=invert,
                 clear_first=clear_first,
             )
@@ -911,6 +929,11 @@ def _do_render(force_full=False):
                 invert,
                 clear_first,
             )
+            if screen_name == "pregame":
+                _refresh_pregame_countdown_from_state()
+                if render.update_dynamic_pregame(img, state):
+                    display_waveshare.show_partial_fullscreen(img, invert=invert)
+                    logger.debug("Display updated current upcoming-game countdown after full refresh")
         else:
             display_waveshare.show_partial_fullscreen(img, invert=invert)
             logger.debug(
@@ -1283,17 +1306,20 @@ def main():
                 live_mode = state.live_mode
                 live_game_pk = state.live_game_pk
 
-            if (
-                live_game_pk
-                and _get_online_state()
-                and loop_start - last_live_poll_time >= LIVE_POLL_INTERVAL
-            ):
-                if _start_live_poll_async():
-                    last_live_poll_time = loop_start
+            focus_countdown = _pregame_should_focus_countdown()
 
-            if loop_start - last_sync_time >= SYNC_INTERVAL:
-                if _start_sync_async():
-                    last_sync_time = loop_start
+            if not focus_countdown:
+                if (
+                    live_game_pk
+                    and _get_online_state()
+                    and loop_start - last_live_poll_time >= LIVE_POLL_INTERVAL
+                ):
+                    if _start_live_poll_async():
+                        last_live_poll_time = loop_start
+
+                if loop_start - last_sync_time >= SYNC_INTERVAL:
+                    if _start_sync_async():
+                        last_sync_time = loop_start
 
             _maybe_enter_live_from_pregame(loop_start)
             _do_render()

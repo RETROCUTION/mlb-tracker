@@ -106,8 +106,17 @@ def update_dynamic(img, state, game, seconds_remaining):
         return False
 
     draw = ImageDraw.Draw(img)
-    _draw_header(draw, state, game)
     _draw_countdown(draw, seconds_remaining)
+    return True
+
+
+def clear_countdown(img):
+    """Blank the countdown area while a slow full refresh is in progress."""
+    if img is None:
+        return False
+
+    draw = ImageDraw.Draw(img)
+    draw.rectangle([0, ZONE_COUNTDOWN_Y1, W, ZONE_COUNTDOWN_Y2], fill=255)
     return True
 
 
