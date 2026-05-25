@@ -4,6 +4,7 @@ set -euo pipefail
 APP_NAME="MLB Tracker"
 SERVICE_NAME="mlb-tracker"
 REPO_ZIP_URL="https://github.com/RETROCUTION/mlb-tracker/archive/refs/heads/main.zip"
+USE_LOCAL_SOURCE="${MLB_TRACKER_UPDATE_LOCAL:-0}"
 
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "Run this updater with sudo:"
@@ -63,12 +64,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-use_local_source=false
-if [[ -d "$SRC_DIR" && "$SRC_DIR" != "$APP_DIR" && -f "$PACKAGE_DIR/install.sh" ]]; then
-  use_local_source=true
-fi
-
-if [[ "$use_local_source" != "true" ]]; then
+if [[ "$USE_LOCAL_SOURCE" == "1" && -d "$SRC_DIR" && "$SRC_DIR" != "$APP_DIR" && -f "$PACKAGE_DIR/install.sh" ]]; then
+  echo "Using local installer package source."
+else
   for cmd in curl unzip rsync; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
       echo "Missing required command: $cmd"
@@ -78,12 +76,10 @@ if [[ "$use_local_source" != "true" ]]; then
   done
 
   TMP_DIR="$(mktemp -d)"
-  echo "Downloading latest $APP_NAME files..."
+  echo "Downloading latest $APP_NAME files from GitHub..."
   curl -fsSL -o "$TMP_DIR/mlb-tracker-main.zip" "$REPO_ZIP_URL"
   unzip -q "$TMP_DIR/mlb-tracker-main.zip" -d "$TMP_DIR"
   SRC_DIR="$TMP_DIR/mlb-tracker-main/mlb-tracker"
-else
-  echo "Using local installer package source."
 fi
 
 if [[ ! -d "$SRC_DIR" ]]; then
