@@ -174,7 +174,21 @@ View recent logs:
 journalctl -u mlb-tracker -n 150 --no-pager -l
 ```
 
-## Update Later
+## Quick Update Later
+
+After MLB Tracker is already installed, use the quick updater:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/RETROCUTION/mlb-tracker/main/update.sh | sudo bash
+```
+
+This updates the app files, keeps your team settings/cache/output, and restarts
+the service. It skips the slower first-time installer steps.
+
+## Full Reinstall Or Repair
+
+Use this if the first install did not finish, dependencies are missing, or you
+are setting up a fresh image:
 
 ```bash
 curl -L -o mlb-tracker-installer.zip https://github.com/RETROCUTION/mlb-tracker/releases/download/v0.1.0/mlb-tracker-installer.zip

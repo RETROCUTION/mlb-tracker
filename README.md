@@ -205,7 +205,21 @@ MLB API cannot be reached.
 
 ## Update MLB Tracker
 
-Download the newest release zip, unzip it, and run the installer again:
+After MLB Tracker is already installed, use the quick updater:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/RETROCUTION/mlb-tracker/main/update.sh | sudo bash
+```
+
+This updates the app files, keeps your team settings/cache/output, and restarts
+the service. It skips the slower first-time installer steps.
+
+If you are setting up a fresh Raspberry Pi, use the full install steps above.
+
+## Full Reinstall Or Repair
+
+Use this if the first install did not finish, dependencies are missing, or you
+are setting up a fresh image:
 
 ```bash
 curl -L -o mlb-tracker-installer.zip https://github.com/RETROCUTION/mlb-tracker/releases/download/v0.1.0/mlb-tracker-installer.zip
