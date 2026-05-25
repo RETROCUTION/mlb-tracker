@@ -87,11 +87,33 @@ chooses their own MLB team and timezone.
 
 ![Config help screen](docs/screenshots/config.png)
 
-## Install
+## Fresh Raspberry Pi Install
 
-Use the packaged installer zip from a release:
+The easiest install path starts with a fresh Raspberry Pi OS image.
+
+1. Install [Raspberry Pi Imager](https://www.raspberrypi.com/software/).
+2. Flash Raspberry Pi OS Lite 32-bit to your microSD card.
+3. In Raspberry Pi Imager's OS customization screen:
+   - Set the hostname to `mlb-tracker`
+   - Set your username and password
+   - Configure Wi-Fi
+   - Enable SSH
+4. Boot the Raspberry Pi and wait a few minutes.
+5. From your computer, open a terminal and connect to the Pi:
 
 ```bash
+ssh pi@mlb-tracker.local
+```
+
+If you chose a different username in Raspberry Pi Imager, replace `pi` with
+that username.
+
+Once you are connected to the Raspberry Pi, run:
+
+```bash
+sudo apt update
+sudo apt install -y curl unzip
+curl -L -o mlb-tracker-installer.zip https://github.com/RETROCUTION/mlb-tracker/releases/download/v0.1.0/mlb-tracker-installer.zip
 unzip mlb-tracker-installer.zip
 cd mlb-tracker-installer
 sudo ./install.sh
@@ -101,7 +123,20 @@ The installer copies the app to `~/mlb-tracker`, installs dependencies, enables
 SPI, installs the Waveshare driver, creates the `mlb-tracker` systemd service,
 and runs the setup wizard.
 
-See `README_INSTALL.md` for fresh-image details.
+The setup wizard asks you to choose your MLB team and timezone. The tracker
+then starts automatically and will also start again after reboot.
+
+For a slower step-by-step beginner guide, see `README_INSTALL.md`.
+
+## Manual Installer Zip
+
+```bash
+unzip mlb-tracker-installer.zip
+cd mlb-tracker-installer
+sudo ./install.sh
+```
+
+Use this only if you already downloaded the release zip manually.
 
 ## Reconfigure Team Or Timezone
 

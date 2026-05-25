@@ -3,6 +3,10 @@
 MLB Tracker is a Raspberry Pi e-paper baseball dashboard for any MLB team.
 Fresh installs require the user to choose a team and timezone.
 
+This guide starts from a blank microSD card and walks through the full install.
+After you SSH into the Raspberry Pi, all terminal commands in this guide are
+run on the Raspberry Pi, not on your Mac or PC.
+
 ## What You Need
 
 - Raspberry Pi Zero W or Zero 2 W
@@ -81,37 +85,24 @@ What these commands do:
 - `sudo apt install -y git curl unzip` installs the tools needed to download
   and unpack MLB Tracker.
 
-## 4. Download MLB Tracker
+## 4. Download And Install MLB Tracker
 
-Download the latest installer release:
+Copy and paste these commands into the SSH terminal on the Raspberry Pi:
 
 ```bash
 curl -L -o mlb-tracker-installer.zip https://github.com/RETROCUTION/mlb-tracker/releases/download/v0.1.0/mlb-tracker-installer.zip
-```
-
-This downloads the installer zip from the GitHub release.
-
-Unzip it:
-
-```bash
 unzip mlb-tracker-installer.zip
 cd mlb-tracker-installer
+sudo ./install.sh
 ```
 
 What these commands do:
 
+- `curl -L -o mlb-tracker-installer.zip ...` downloads the latest installer
+  from GitHub.
 - `unzip mlb-tracker-installer.zip` extracts the installer files.
 - `cd mlb-tracker-installer` moves into the installer folder.
-
-## 5. Run The Installer
-
-```bash
-sudo ./install.sh
-```
-
-This runs the installer with administrator permissions. It installs the
-required packages, configures the display support, copies MLB Tracker into
-place, and creates the automatic startup service.
+- `sudo ./install.sh` runs the installer with administrator permissions.
 
 The installer will:
 
@@ -126,7 +117,17 @@ Follow the setup prompts to choose your team and timezone. If Wi-Fi was not
 configured in Raspberry Pi Imager, the setup wizard can help configure it from
 an attached keyboard/display.
 
-## 6. Verify It Is Running
+## Alternative: Download First, Install Later
+
+If you already downloaded the installer zip manually, start here instead:
+
+```bash
+unzip mlb-tracker-installer.zip
+cd mlb-tracker-installer
+sudo ./install.sh
+```
+
+## 5. Verify It Is Running
 
 ```bash
 sudo systemctl status mlb-tracker --no-pager
