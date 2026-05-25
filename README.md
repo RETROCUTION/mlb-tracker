@@ -70,7 +70,7 @@ microSD card.
 1. Install [Raspberry Pi Imager](https://www.raspberrypi.com/software/).
 2. Open Raspberry Pi Imager.
 3. Choose your Raspberry Pi model.
-4. Choose Raspberry Pi OS Lite 32-bit.
+4. Choose Raspberry Pi OS Lite 32-bit. This is the non-desktop version.
 5. Choose your microSD card.
 6. Open OS customization before writing the card.
 7. Set the hostname to `mlb-tracker`.

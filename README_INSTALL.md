@@ -19,13 +19,14 @@ run on the Raspberry Pi.
 
 ## Recommended Raspberry Pi OS
 
-Use Raspberry Pi OS Lite 32-bit. It works well for Pi Zero W and Pi Zero 2 W.
+Use Raspberry Pi OS Lite 32-bit. This is the non-desktop version, and it works
+well for Pi Zero W and Pi Zero 2 W.
 
 ## 1. Flash The SD Card
 
 1. Install and open Raspberry Pi Imager.
 2. Choose your Raspberry Pi model.
-3. Choose Raspberry Pi OS Lite 32-bit.
+3. Choose Raspberry Pi OS Lite 32-bit. This is the non-desktop version.
 4. Choose your microSD card.
 5. Open OS customization before writing the card.
 6. Set the hostname to `mlb-tracker`.
