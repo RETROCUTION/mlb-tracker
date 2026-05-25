@@ -113,16 +113,24 @@ def _draw_header(draw, img, state, games):
         datetime.now(TZ),
         clock_fnt,
         fill=255,
+        label="ONLINE:",
+        label_font=regular_font(9),
         show_date=True,
         date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
     )
 
-    draw.text((W - 220, 24), "< PREV", font=nav_fnt, fill=255)
-
+    score_center_x = (COL["score"] + COL["result"]) // 2
     pw = text_w(draw, page_str, page_fnt)
-    draw.text((W - 120 - pw // 2, 25), page_str, font=page_fnt, fill=255)
+    draw.text((score_center_x - pw // 2, 7), page_str, font=page_fnt, fill=255)
 
-    draw.text((W - 56, 24), "NEXT >", font=nav_fnt, fill=255)
+    prev_str = "< PREV"
+    next_str = "NEXT >"
+    nav_gap = 14
+    prev_w = text_w(draw, prev_str, nav_fnt)
+    next_w = text_w(draw, next_str, nav_fnt)
+    nav_x = score_center_x - (prev_w + nav_gap + next_w) // 2
+    draw.text((nav_x, 24), prev_str, font=nav_fnt, fill=255)
+    draw.text((nav_x + prev_w + nav_gap, 24), next_str, font=nav_fnt, fill=255)
 
     draw_hline(draw, 0, HEADER_H - 1, W, thickness=1, fill=0)
 

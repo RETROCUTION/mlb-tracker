@@ -123,6 +123,8 @@ def _draw_header(draw, state, game):
         datetime.now(config.LOCAL_TZ),
         regular_font(config.HEADER_CLOCK_FONT_SIZE),
         fill=255,
+        label="ONLINE:",
+        label_font=regular_font(9),
         show_date=True,
         date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
     )
