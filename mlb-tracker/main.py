@@ -80,6 +80,8 @@ _last_full_refresh = 0.0
 _live_buffer = deque(maxlen=600)
 _display_generation = 0
 _was_online = False
+_input_transition_active = False
+_clock_paused = False
 
 
 # ---------------------------------------------------------------------------
@@ -133,6 +135,43 @@ def _request_display(full=False, clear=False):
         if clear:
             _force_clear_next = True
         _display_generation += 1
+
+
+def _begin_button_action(name):
+    global _input_transition_active, _clock_paused, _display_generation
+
+    with _display_request_lock:
+        if _input_transition_active:
+            logger.info("Ignoring %s button while display transition is active", name)
+            return False
+
+        _input_transition_active = True
+        _clock_paused = True
+        _display_generation += 1
+
+    return True
+
+
+def _finish_button_action():
+    global _input_transition_active, _clock_paused, _display_generation
+
+    with _display_request_lock:
+        if not _input_transition_active:
+            return
+
+        _input_transition_active = False
+        _clock_paused = False
+        _display_generation += 1
+
+
+def _is_clock_paused():
+    with _display_request_lock:
+        return _clock_paused
+
+
+def _has_forced_display_pending():
+    with _display_request_lock:
+        return _force_full_next or _force_clear_next
 
 
 def _get_display_generation():
@@ -655,6 +694,9 @@ def _screen_signature():
 def _do_render(force_full=False):
     global _last_full_refresh
 
+    if _is_clock_paused() and not force_full and not _has_forced_display_pending():
+        return
+
     with _render_lock:
         img = None
         stable_generation = None
@@ -694,6 +736,10 @@ def _do_render(force_full=False):
         invert = _should_invert_display()
         now = time.time()
         do_full, clear_first = _take_display_flags(force_full, now)
+        screen_name = _screen_name()
+
+        if do_full and screen_name == "schedule":
+            clear_first = True
 
         if do_full:
             display_waveshare.show_full(
@@ -704,7 +750,7 @@ def _do_render(force_full=False):
             _last_full_refresh = time.time()
             logger.info(
                 "Display updated full — screen=%s invert=%s clear=%s",
-                _screen_name(),
+                screen_name,
                 invert,
                 clear_first,
             )
@@ -712,9 +758,11 @@ def _do_render(force_full=False):
             display_waveshare.show_partial_fullscreen(img, invert=invert)
             logger.debug(
                 "Display updated partial fullscreen — screen=%s invert=%s",
-                _screen_name(),
+                screen_name,
                 invert,
             )
+
+        _finish_button_action()
 
 
 # ---------------------------------------------------------------------------
@@ -793,6 +841,9 @@ def _data_changed(old_summary, new_summary, old_games, new_games):
 # ---------------------------------------------------------------------------
 
 def _on_center_short():
+    if not _begin_button_action("CENTER short"):
+        return
+
     with _state_lock:
         if state.config_mode:
             logger.info("CENTER short — exit config screen")
@@ -835,10 +886,13 @@ def _on_center_short():
     if is_schedule:
         _position_schedule()
 
-    _request_display(full=True)
+    _request_display(full=True, clear=is_schedule)
 
 
 def _on_center_long():
+    if not _begin_button_action("CENTER long"):
+        return
+
     logger.info("CENTER long — force sync")
 
     online = sync_manager.check_connectivity()
@@ -857,38 +911,54 @@ def _on_center_long():
 
 
 def _on_left_short():
+    if not _begin_button_action("LEFT short"):
+        return
+
     with _state_lock:
         if state.config_mode or state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
+            _finish_button_action()
             return
         logger.info("LEFT short — schedule back")
         state.scroll_schedule_back()
 
-    _request_display(full=True)
+    _request_display(full=True, clear=True)
 
 
 def _on_right_short():
+    if not _begin_button_action("RIGHT short"):
+        return
+
     with _state_lock:
         if state.config_mode or state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
+            _finish_button_action()
             return
         logger.info("RIGHT short — schedule forward")
         state.scroll_schedule_forward()
 
-    _request_display(full=True)
+    _request_display(full=True, clear=True)
 
 
 def _on_left_long():
+    if not _begin_button_action("LEFT long"):
+        return
+
     with _state_lock:
         if state.config_mode or state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
+            _finish_button_action()
             return
         logger.info("LEFT long — jump to schedule start")
         state.jump_to_game(0)
 
-    _request_display(full=True)
+    _request_display(full=True, clear=True)
 
 
 def _on_right_long():
+    if not _begin_button_action("RIGHT long"):
+        return
+
     with _state_lock:
         if state.config_mode or state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
+            _finish_button_action()
             return
 
     logger.info("RIGHT long — jump to next game")
@@ -900,10 +970,13 @@ def _on_right_long():
         with _state_lock:
             state.jump_to_game(idx)
 
-    _request_display(full=True)
+    _request_display(full=True, clear=True)
 
 
 def _on_live():
+    if not _begin_button_action("LIVE"):
+        return
+
     with _state_lock:
         in_live_mode = state.live_mode
         in_pregame_mode = state.pregame_mode
@@ -969,6 +1042,9 @@ def _on_live():
 
 
 def _on_config_combo():
+    if not _begin_button_action("LEFT+RIGHT config"):
+        return
+
     logger.info("LEFT+RIGHT hold — show config screen")
     url = config_server.start(on_saved=_restart_after_config_save)
 
@@ -1039,7 +1115,6 @@ def main():
 
     last_sync_time = time.time()
     last_live_poll_time = 0.0
-    next_display_time = time.time()
 
     logger.info("Entering main loop")
 
@@ -1065,11 +1140,9 @@ def main():
 
             _do_render()
 
-            next_display_time += DISPLAY_TICK_SECONDS
             now = time.time()
-            if next_display_time <= now:
-                next_display_time = now + DISPLAY_TICK_SECONDS
-            time.sleep(max(0.01, next_display_time - now))
+            sleep_for = DISPLAY_TICK_SECONDS - (now % DISPLAY_TICK_SECONDS)
+            time.sleep(max(0.01, sleep_for))
 
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt — shutting down")
