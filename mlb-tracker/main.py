@@ -12,6 +12,7 @@ The Waveshare panel is driven like the working clock.py reference:
 import time
 import threading
 import logging
+import math
 import os
 import sys
 from datetime import datetime, timezone
@@ -64,6 +65,14 @@ PREGAME_WINDOW_SECONDS = 10 * 60
 PREGAME_POST_START_GRACE_SECONDS = 10 * 60
 PREGAME_LIVE_CHECK_INTERVAL = 5
 BOOT_DELAY = 0
+
+
+def _seconds_until_start(start_utc, now_utc=None, clamp=True):
+    if now_utc is None:
+        now_utc = datetime.now(timezone.utc)
+    seconds = math.ceil((start_utc - now_utc).total_seconds())
+    return max(0, seconds) if clamp else seconds
+
 
 # ---------------------------------------------------------------------------
 # State
@@ -575,7 +584,7 @@ def _refresh_pregame_countdown_from_state():
         start_utc = datetime.fromisoformat(
             game["date_utc"].replace("Z", "+00:00")
         )
-        seconds = int((start_utc - datetime.now(timezone.utc)).total_seconds())
+        seconds = _seconds_until_start(start_utc)
     except Exception:
         seconds = 0
 
@@ -609,7 +618,7 @@ def _update_pregame_state(games):
             start_utc = datetime.fromisoformat(
                 manual_game["date_utc"].replace("Z", "+00:00")
             )
-            seconds_remaining = max(0, int((start_utc - now_utc).total_seconds()))
+            seconds_remaining = _seconds_until_start(start_utc, now_utc)
         except Exception:
             seconds_remaining = 0
 
@@ -633,7 +642,7 @@ def _update_pregame_state(games):
         except Exception:
             continue
 
-        seconds = int((start_utc - now_utc).total_seconds())
+        seconds = _seconds_until_start(start_utc, now_utc, clamp=False)
         if -PREGAME_POST_START_GRACE_SECONDS <= seconds <= PREGAME_WINDOW_SECONDS:
             pregame = g
             seconds_remaining = max(0, seconds)
@@ -1154,10 +1163,7 @@ def _on_live():
                 start_utc = datetime.fromisoformat(
                     upcoming_game["date_utc"].replace("Z", "+00:00")
                 )
-                seconds_remaining = max(
-                    0,
-                    int((start_utc - now_utc).total_seconds()),
-                )
+                seconds_remaining = _seconds_until_start(start_utc, now_utc)
             except Exception:
                 seconds_remaining = 0
 
