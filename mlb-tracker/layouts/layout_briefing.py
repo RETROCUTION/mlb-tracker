@@ -628,17 +628,30 @@ def _draw_next_game(draw, games, summary=None):
     dt_utc   = datetime.fromisoformat(nxt["date_utc"].replace("Z", "+00:00"))
     dt_local = dt_utc.astimezone(TZ)
 
+    main_area_x = section_x + 10
+    main_area_w = OPP_STATS_X_OFF - main_area_x - 10
+
+    date_str = format_date_long(dt_local)
+    date_fnt = regular_font(14)
+    if text_w(draw, date_str, date_fnt) > main_area_w:
+        date_fnt = regular_font(12)
+    date_w = text_w(draw, date_str, date_fnt)
     draw.text(
-        (section_x + 10, section_y + NG_DATE_Y),
-        format_date_long(dt_local),
-        font=regular_font(14),
+        (main_area_x + (main_area_w - date_w) // 2, section_y + NG_DATE_Y),
+        date_str,
+        font=date_fnt,
         fill=0
     )
 
+    time_str = format_time_local(dt_local)
+    time_fnt = score_font(NG_TIME_SIZE)
+    if text_w(draw, time_str, time_fnt) > main_area_w:
+        time_fnt = score_font(54)
+    time_w = text_w(draw, time_str, time_fnt)
     draw.text(
-        (section_x + 10, section_y + NG_TIME_Y),
-        format_time_local(dt_local),
-        font=score_font(NG_TIME_SIZE),
+        (main_area_x + (main_area_w - time_w) // 2, section_y + NG_TIME_Y),
+        time_str,
+        font=time_fnt,
         fill=0
     )
 
