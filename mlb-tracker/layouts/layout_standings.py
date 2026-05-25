@@ -80,6 +80,7 @@ def _draw_header(draw, state):
             label_font=label_fnt,
             show_date=True,
             date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
+            show_wifi=True,
         )
     else:
         if state.last_sync_time:

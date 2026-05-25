@@ -10,7 +10,7 @@ from layouts.draw_utils import (
     draw_text_centered, draw_hline, draw_vline,
     text_w, text_h, format_date_long, format_time_local,
     format_datetime_short, format_clock_local, format_header_date,
-    ordinal, draw_clock_right
+    ordinal, draw_clock_right, draw_wifi_meter
 )
 
 TZ = config.LOCAL_TZ
@@ -212,7 +212,9 @@ def _draw_header(draw, img, state):
 
         label_str = "ONLINE:"
         label_w = text_w(draw, label_str, label_fnt)
-        draw.text((time_x - label_w - 8, 10), label_str, font=label_fnt, fill=255)
+        label_x = time_x - label_w - 8
+        draw.text((label_x, 10), label_str, font=label_fnt, fill=255)
+        draw_wifi_meter(draw, label_x, 26, fill=255)
         draw.text((time_x, 8), time_str, font=val_fnt, fill=255)
         draw.text(
             (stats_center_x - date_w // 2, 23),

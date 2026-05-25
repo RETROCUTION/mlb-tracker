@@ -129,6 +129,7 @@ def _draw_header(draw, state, game):
         label_font=regular_font(9),
         show_date=True,
         date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
+        show_wifi=True,
     )
 
     if state and state.stale:

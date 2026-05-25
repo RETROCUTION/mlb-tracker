@@ -128,6 +128,7 @@ def _draw_header(draw, img, state, games):
         label_font=regular_font(9),
         show_date=True,
         date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
+        show_wifi=True,
     )
 
     score_center_x = COL["score"] + COL_W["score"] // 2

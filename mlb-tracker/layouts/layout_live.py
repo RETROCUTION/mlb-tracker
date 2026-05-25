@@ -117,6 +117,7 @@ def _draw_no_game(draw):
         label_font=regular_font(9),
         show_date=True,
         date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
+        show_wifi=True,
     )
 
     box_x, box_y = 150, 130
@@ -251,6 +252,7 @@ def _draw_zone_a(draw, g):
         label_font=regular_font(9),
         show_date=True,
         date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
+        show_wifi=True,
     )
 
     draw_hline(draw, 0, ZONE_A_H - 1, W, thickness=2, fill=0)
