@@ -34,6 +34,20 @@ def fetch_standings(season=None):
     return resp.json()
 
 
+def fetch_world_series_schedule(season=None):
+    season = season or config.CURRENT_SEASON
+    url = (
+        f"{config.MLB_BASE_URL}/schedule"
+        f"?sportId=1"
+        f"&season={season}"
+        f"&gameTypes=W"
+        f"&hydrate=team,linescore,decisions"
+    )
+    resp = SESSION.get(url, timeout=15)
+    resp.raise_for_status()
+    return resp.json()
+
+
 def fetch_live_game(game_pk):
     """
     Fetch the full live game feed for a given gamePk.
@@ -311,6 +325,7 @@ def parse_schedule(raw):
 
             games.append({
                 "game_pk":     g.get("gamePk"),
+                "game_type":   g.get("gameType"),
                 "game_number": g.get("gameNumber", 1),
                 "date_utc":    g.get("gameDate", ""),
                 "status":      game_state,
@@ -333,6 +348,64 @@ def parse_schedule(raw):
 
     games.sort(key=lambda g: (g["date_utc"], g["game_number"]))
     return games
+
+
+def parse_world_series_summary(raw, season):
+    games = []
+
+    for date_entry in raw.get("dates", []):
+        for g in date_entry.get("games", []):
+            if g.get("gameType") != "W":
+                continue
+
+            teams = g.get("teams", {})
+            away = teams.get("away", {})
+            home = teams.get("home", {})
+            away_team = away.get("team", {})
+            home_team = home.get("team", {})
+            away_score = away.get("score")
+            home_score = home.get("score")
+            status = g.get("status", {})
+
+            games.append({
+                "game_pk": g.get("gamePk"),
+                "date_utc": g.get("gameDate", ""),
+                "status": status.get("abstractGameState", ""),
+                "status_detail": status.get("detailedState", ""),
+                "away_name": away_team.get("name", ""),
+                "home_name": home_team.get("name", ""),
+                "away_score": away_score,
+                "home_score": home_score,
+            })
+
+    games.sort(key=lambda g: (g.get("date_utc", ""), g.get("game_pk") or 0))
+
+    finals = [
+        g for g in games
+        if g.get("status") == "Final"
+        and g.get("away_score") is not None
+        and g.get("home_score") is not None
+    ]
+    if not finals:
+        return None
+
+    final_game = finals[-1]
+    away_score = final_game["away_score"]
+    home_score = final_game["home_score"]
+    if away_score > home_score:
+        champion = final_game["away_name"]
+        runner_up = final_game["home_name"]
+    else:
+        champion = final_game["home_name"]
+        runner_up = final_game["away_name"]
+
+    return {
+        "season": season,
+        "champion": champion,
+        "runner_up": runner_up,
+        "final_game": final_game,
+        "final_score": f"{final_game['away_name']} {away_score}, {final_game['home_name']} {home_score}",
+    }
 
 
 def parse_standings(raw):

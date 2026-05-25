@@ -27,11 +27,15 @@ if you want one card/package to work across both boards.
 3. Choose Raspberry Pi OS Lite 32-bit.
 4. Choose your microSD card.
 5. Open OS customization before writing the card.
-6. Set a hostname, for example:
+6. Set the hostname to:
 
 ```text
 mlb-tracker
 ```
+
+This hostname is important. It lets you connect later with
+`ssh pi@mlb-tracker.local` and lets the config screen show
+`http://mlb-tracker.local:8765`.
 
 7. Set a username and password.
 8. Configure Wi-Fi with your network name, password, country, and timezone.
@@ -52,6 +56,9 @@ username in Raspberry Pi Imager:
 ssh pi@mlb-tracker.local
 ```
 
+This opens a terminal session on the Raspberry Pi so you can install MLB
+Tracker from your computer.
+
 If that hostname does not work, find the Pi's IP address from your router and
 connect with:
 
@@ -68,6 +75,12 @@ sudo apt update
 sudo apt install -y git curl unzip
 ```
 
+What these commands do:
+
+- `sudo apt update` refreshes the Raspberry Pi package list.
+- `sudo apt install -y git curl unzip` installs the tools needed to download
+  and unpack MLB Tracker.
+
 ## 4. Download MLB Tracker
 
 Download the latest installer release:
@@ -76,6 +89,8 @@ Download the latest installer release:
 curl -L -o mlb-tracker-installer.zip https://github.com/RETROCUTION/mlb-tracker/releases/download/v0.1.0/mlb-tracker-installer.zip
 ```
 
+This downloads the installer zip from the GitHub release.
+
 Unzip it:
 
 ```bash
@@ -83,11 +98,20 @@ unzip mlb-tracker-installer.zip
 cd mlb-tracker-installer
 ```
 
+What these commands do:
+
+- `unzip mlb-tracker-installer.zip` extracts the installer files.
+- `cd mlb-tracker-installer` moves into the installer folder.
+
 ## 5. Run The Installer
 
 ```bash
 sudo ./install.sh
 ```
+
+This runs the installer with administrator permissions. It installs the
+required packages, configures the display support, copies MLB Tracker into
+place, and creates the automatic startup service.
 
 The installer will:
 
@@ -125,11 +149,15 @@ the display still remains useful instead of going blank.
 
 ## Button Reconfiguration Shortcut
 
-Hold LEFT and RIGHT together for 3 seconds to show reconfiguration instructions
-on the e-paper display. LEFT and RIGHT are primarily used to scroll the schedule
-screen.
+Hold LEFT and RIGHT together for 3 seconds to open config mode. The e-paper
+display shows a local web address. Open that address on a phone or computer on
+the same Wi-Fi network to use dropdowns for Wi-Fi, team, and timezone, plus a
+password field.
 
-## Reconfigure Later
+If you connect a keyboard/display to the Raspberry Pi or prefer SSH, you can
+also reconfigure from the terminal with these commands.
+
+## Terminal Reconfiguration
 
 ```bash
 cd ~/mlb-tracker
@@ -137,6 +165,13 @@ sudo systemctl stop mlb-tracker
 python3 scripts/setup_wizard.py --force
 sudo systemctl start mlb-tracker
 ```
+
+What these commands do:
+
+- `cd ~/mlb-tracker` moves into the installed MLB Tracker folder.
+- `sudo systemctl stop mlb-tracker` stops the display service while you change settings.
+- `python3 scripts/setup_wizard.py --force` opens the terminal setup wizard.
+- `sudo systemctl start mlb-tracker` starts the display service again.
 
 ## Useful Commands
 

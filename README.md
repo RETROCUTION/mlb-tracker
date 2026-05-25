@@ -32,16 +32,17 @@ Fresh installs require each user to choose their own team and timezone.
 - Pregame screen before first pitch
 - Automatic live-game mode when the selected team has a game in progress
 - Manual live-game button on GPIO 26
-- Live button opens the pregame VS screen on game day if the game has not started
-- Live button shows a no-live-game popup when there is no live or same-day upcoming game
+- Live button opens the next upcoming VS/countdown screen when no game is live
+- Live button shows a no-live-game popup when there is no live or upcoming game
 - Left and right buttons primarily scroll the schedule screen
-- Holding left and right together for 3 seconds opens reconfiguration instructions
+- Holding left and right together for 3 seconds opens a local config page
+- Config page includes dropdowns for Wi-Fi, team, and timezone
 - Live score, inning, count, outs, pitch number, runners, runner names, and line score
 - Live game data can poll about once per second, with a configurable broadcast delay
 - Extra-innings line score view
 - Full-screen partial refresh for fast e-paper updates without constant full flashes
-- Per-page display inversion support for sharper schedule/rankings output
-- Automatic season rollover, with an offseason notice before the next season starts
+- Per-page display inversion support for sharper schedule and rankings output
+- Automatic season rollover, with World Series/offseason info before the next season starts
 
 ## Button Wiring
 
@@ -53,7 +54,7 @@ Buttons are optional, but the default GPIO layout is:
 | Center | 6 | Cycle screens, or exit live mode back to main screen |
 | Right | 13 | Scroll schedule forward |
 | Live | 26 | Jump to live game mode when a game is in progress |
-| Left + Right | 5 + 13 | Hold both for 3 seconds to show reconfiguration instructions |
+| Left + Right | 5 + 13 | Hold both for 3 seconds to open the local config page |
 
 Long-press behavior is supported for the schedule navigation buttons.
 

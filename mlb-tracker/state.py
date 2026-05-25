@@ -12,6 +12,7 @@ class AppState:
         self.last_sync_time      = None
         self.force_sync          = False
         self.config_mode         = False
+        self.config_url          = None
         self.live_mode           = False
         self.live_game_pk        = None
         self.live_game_data      = None

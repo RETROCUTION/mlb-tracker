@@ -31,6 +31,9 @@ def sync():
     all_teams = season_data["all_teams"]
     season_not_started = season_data["season_not_started"]
     upcoming_season = season_data["upcoming_season"]
+    season_start_date = season_data.get("season_start_date")
+    season_starts_in_days = season_data.get("season_starts_in_days")
+    world_series = _fetch_world_series_summary(season) if season_not_started else None
 
     team = next(
         (t for t in all_teams if t["team_id"] == config.TEAM_ID),
@@ -65,6 +68,8 @@ def sync():
         "season": season,
         "upcoming_season": upcoming_season,
         "season_not_started": season_not_started,
+        "season_start_date": season_start_date,
+        "season_starts_in_days": season_starts_in_days,
         "games": games,
     })
 
@@ -87,6 +92,9 @@ def sync():
         "upcoming_season": upcoming_season,
         "season_not_started": season_not_started,
         "season_message": _season_message(season, upcoming_season, season_not_started),
+        "season_start_date": season_start_date,
+        "season_starts_in_days": season_starts_in_days,
+        "world_series": world_series,
         "record": {"wins": team["wins"], "losses": team["losses"]},
         "pct": team["pct"],
         "division_rank": division_rank,
@@ -117,6 +125,8 @@ def _fetch_display_season():
         candidates.append(current - 1)
 
     first_valid = None
+    upcoming_start_date = None
+    upcoming_starts_in_days = None
 
     for season in candidates:
         try:
@@ -140,24 +150,33 @@ def _fetch_display_season():
             "all_teams": all_teams,
             "season_not_started": False,
             "upcoming_season": None,
+            "season_start_date": None,
+            "season_starts_in_days": None,
         }
 
         if first_valid is None:
             first_valid = data
 
         if season == current and _season_has_not_started(games):
+            upcoming_start_date, upcoming_starts_in_days = _next_season_start(games)
             logger.info("%s season has not started; checking prior season", season)
             continue
 
         if season != current:
             data["season_not_started"] = True
             data["upcoming_season"] = current
+            data["season_start_date"] = upcoming_start_date
+            data["season_starts_in_days"] = upcoming_starts_in_days
 
         return data
 
     if first_valid:
         first_valid["season_not_started"] = _season_has_not_started(first_valid["games"])
         first_valid["upcoming_season"] = current if first_valid["season_not_started"] else None
+        if first_valid["season_not_started"]:
+            start_date, starts_in_days = _next_season_start(first_valid["games"])
+            first_valid["season_start_date"] = start_date
+            first_valid["season_starts_in_days"] = starts_in_days
         return first_valid
 
     return None
@@ -186,6 +205,29 @@ def _season_has_not_started(games):
     return first_game_date is None or today < first_game_date
 
 
+def _next_season_start(games):
+    today = datetime.now(config.LOCAL_TZ).date()
+    first_game_date = None
+
+    for g in games:
+        if g.get("status") not in ("Preview", "Pre-Game", "Scheduled"):
+            continue
+
+        try:
+            start_utc = datetime.fromisoformat(g["date_utc"].replace("Z", "+00:00"))
+        except Exception:
+            continue
+
+        game_date = start_utc.astimezone(config.LOCAL_TZ).date()
+        if first_game_date is None or game_date < first_game_date:
+            first_game_date = game_date
+
+    if first_game_date is None:
+        return None, None
+
+    return first_game_date.isoformat(), max(0, (first_game_date - today).days)
+
+
 def _season_message(season, upcoming_season, season_not_started):
     if not season_not_started or not upcoming_season:
         return ""
@@ -194,6 +236,15 @@ def _season_message(season, upcoming_season, season_not_started):
         f"{upcoming_season} season has not started yet - "
         f"showing final {season} data"
     )
+
+
+def _fetch_world_series_summary(season):
+    try:
+        raw = mlb_api.fetch_world_series_schedule(season)
+        return mlb_api.parse_world_series_summary(raw, season)
+    except Exception as e:
+        logger.warning("World Series summary unavailable for %s: %s", season, e)
+        return None
 
 
 def compute_ws_index(record, mlb_rank, mlb_total, nl_west_rank,

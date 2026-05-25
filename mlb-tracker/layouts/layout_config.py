@@ -26,16 +26,15 @@ def render(state):
 
     heading_fnt = bold_font(24)
     body_fnt = regular_font(17)
-    mono_fnt = bold_font(15)
     small_fnt = regular_font(12)
 
-    heading = "RECONFIGURE MLB TRACKER"
+    heading = "OPEN CONFIG PAGE"
     hw = text_w(draw, heading, heading_fnt)
     draw.text(((W - hw) // 2, 74), heading, font=heading_fnt, fill=0)
 
     lines = [
-        "Use this screen when you need to change Wi-Fi, timezone, or team.",
-        "Connect with SSH or attach a keyboard/display, then run:",
+        "Use a phone or computer on the same Wi-Fi network.",
+        "Open this address in a browser:",
     ]
 
     y = 126
@@ -45,22 +44,31 @@ def render(state):
         y += 28
 
     box_x = 72
-    box_y = 196
+    box_y = 190
     box_w = W - box_x * 2
-    box_h = 118
+    box_h = 84
     draw.rectangle([box_x, box_y, box_x + box_w, box_y + box_h], outline=0, width=2)
 
-    commands = [
-        "ssh pi@mlb-tracker.local",
-        "cd ~/mlb-tracker",
-        "python3 scripts/setup_wizard.py --force",
-        "sudo systemctl restart mlb-tracker",
-    ]
+    url = getattr(state, "config_url", None) or "http://mlb-tracker.local:8765"
+    url_fnt = bold_font(20)
+    if text_w(draw, url, url_fnt) > box_w - 36:
+        url_fnt = bold_font(16)
+    url_w = text_w(draw, url, url_fnt)
+    draw.text((box_x + (box_w - url_w) // 2, box_y + 28), url, font=url_fnt, fill=0)
 
-    cy = box_y + 16
-    for cmd in commands:
-        draw.text((box_x + 18, cy), cmd, font=mono_fnt, fill=0)
-        cy += 24
+    help_lines = [
+        "The web page has dropdowns for Wi-Fi, team, and timezone.",
+        "It also has a password field and manual Wi-Fi entry.",
+        "Keyboard/terminal option: python3 scripts/setup_wizard.py --force",
+    ]
+    hy = 286
+    for line in help_lines:
+        line_fnt = small_fnt
+        if text_w(draw, line, line_fnt) > W - 24:
+            line_fnt = regular_font(10)
+        lw = text_w(draw, line, line_fnt)
+        draw.text(((W - lw) // 2, hy), line, font=line_fnt, fill=0)
+        hy += 22
 
     hint1 = "LEFT + RIGHT held for 3 seconds opens this screen."
     hint2 = "LEFT/RIGHT primarily scroll the schedule screen. CENTER returns to the tracker."

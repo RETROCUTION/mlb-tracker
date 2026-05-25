@@ -846,19 +846,8 @@ def _draw_outlook_bar(draw, summary):
         return
 
     if summary.get("season_not_started"):
-        message = summary.get("season_message") or "Next season has not started yet"
-        message = message.upper()
-        msg_fnt = bold_font(14)
-        if text_w(draw, message, msg_fnt) > W - 24:
-            msg_fnt = bold_font(12)
-        msg_w = text_w(draw, message, msg_fnt)
         draw.rectangle([0, bar_y, W, H], fill=0)
-        draw.text(
-            ((W - msg_w) // 2, bar_y + 10),
-            message,
-            font=msg_fnt,
-            fill=255,
-        )
+        _draw_offseason_notice(draw, summary, bar_y)
         return
 
     index = summary.get("ws_index", 0)
@@ -903,6 +892,72 @@ def _draw_outlook_bar(draw, summary):
         font=regular_font(OUT_IDX_SIZE),
         fill=0
     )
+
+
+def _draw_offseason_notice(draw, summary, bar_y):
+    line1 = _world_series_line(summary)
+    line2 = _season_countdown_line(summary)
+
+    if not line1:
+        line1 = summary.get("season_message") or "Next season has not started yet"
+
+    line1 = line1.upper()
+    line2 = (line2 or "").upper()
+
+    line1_fnt = bold_font(11)
+    line2_fnt = bold_font(13)
+    if text_w(draw, line1, line1_fnt) > W - 24:
+        line1_fnt = regular_font(10)
+    if text_w(draw, line2, line2_fnt) > W - 24:
+        line2_fnt = bold_font(11)
+
+    if line2:
+        y1, y2 = bar_y + 5, bar_y + 21
+    else:
+        y1, y2 = bar_y + 11, None
+
+    line1_w = text_w(draw, line1, line1_fnt)
+    draw.text(((W - line1_w) // 2, y1), line1, font=line1_fnt, fill=255)
+
+    if line2:
+        line2_w = text_w(draw, line2, line2_fnt)
+        draw.text(((W - line2_w) // 2, y2), line2, font=line2_fnt, fill=255)
+
+
+def _world_series_line(summary):
+    ws = summary.get("world_series") or {}
+    champion = ws.get("champion")
+    runner_up = ws.get("runner_up")
+    final_game = ws.get("final_game") or {}
+    away = final_game.get("away_name")
+    home = final_game.get("home_name")
+    away_score = final_game.get("away_score")
+    home_score = final_game.get("home_score")
+    season = ws.get("season") or summary.get("season")
+
+    if not champion or not runner_up:
+        return ""
+
+    if away and home and away_score is not None and home_score is not None:
+        score = f"{away_score}-{home_score}" if champion == away else f"{home_score}-{away_score}"
+        return f"{champion} win the {season} World Series against {runner_up}, {score}"
+
+    return f"{champion} win the {season} World Series against {runner_up}"
+
+
+def _season_countdown_line(summary):
+    upcoming = summary.get("upcoming_season")
+    days = summary.get("season_starts_in_days")
+    if upcoming and days is not None:
+        try:
+            days_int = int(days)
+        except (TypeError, ValueError):
+            days_int = None
+        if days_int is not None:
+            day_word = "day" if days_int == 1 else "days"
+            return f"{days_int} {day_word} until the {upcoming} season begins"
+
+    return summary.get("season_message", "")
 
 
 def ws_label_fallback(index):

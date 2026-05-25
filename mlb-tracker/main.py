@@ -35,6 +35,7 @@ import mlb_api
 import render
 import input_controls
 import display_waveshare
+import config_server
 from state import AppState
 
 logging.basicConfig(
@@ -101,9 +102,7 @@ def _find_live_game_pk(games):
     return live_game.get("game_pk") if live_game else None
 
 
-def _find_todays_upcoming_game(games):
-    today = datetime.now(config.LOCAL_TZ).date()
-
+def _find_next_upcoming_game(games):
     for g in games:
         if g.get("status") not in ("Preview", "Pre-Game", "Scheduled"):
             continue
@@ -115,7 +114,7 @@ def _find_todays_upcoming_game(games):
         except Exception:
             continue
 
-        if start_utc.astimezone(config.LOCAL_TZ).date() == today:
+        if start_utc >= datetime.now(timezone.utc):
             return g
 
     return None
@@ -291,10 +290,21 @@ def _exit_pregame_mode():
 def _exit_config_mode():
     with _state_lock:
         state.config_mode = False
+        state.config_url = None
         state.page = config.PAGE_BRIEFING
 
+    config_server.stop()
     logger.info("Exited config screen")
     _request_display(full=True)
+
+
+def _restart_after_config_save():
+    logger.info("Config saved from web portal; restarting tracker")
+    try:
+        input_controls.cleanup()
+        display_waveshare.sleep()
+    finally:
+        os._exit(0)
 
 
 def _poll_live_game():
@@ -748,13 +758,13 @@ def _on_live():
     game_pk = _find_live_game_pk(games)
 
     if not game_pk:
-        today_game = _find_todays_upcoming_game(games)
-        if today_game:
-            logger.info("LIVE button pressed — showing today's pregame screen")
+        upcoming_game = _find_next_upcoming_game(games)
+        if upcoming_game:
+            logger.info("LIVE button pressed — showing next upcoming pregame screen")
             now_utc = datetime.now(timezone.utc)
             try:
                 start_utc = datetime.fromisoformat(
-                    today_game["date_utc"].replace("Z", "+00:00")
+                    upcoming_game["date_utc"].replace("Z", "+00:00")
                 )
                 seconds_remaining = max(
                     0,
@@ -770,7 +780,7 @@ def _on_live():
                 state.live_game_data = None
                 state.pregame_mode = True
                 state.pregame_manual = True
-                state.pregame_game = today_game
+                state.pregame_game = upcoming_game
                 state.pregame_seconds_remaining = seconds_remaining
             _request_display(full=True, clear=True)
             return
@@ -796,9 +806,11 @@ def _on_live():
 
 def _on_config_combo():
     logger.info("LEFT+RIGHT hold — show config screen")
+    url = config_server.start(on_saved=_restart_after_config_save)
 
     with _state_lock:
         state.config_mode = True
+        state.config_url = url
         state.live_mode = False
         state.live_game_pk = None
         state.live_game_data = None
