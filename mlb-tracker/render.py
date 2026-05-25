@@ -34,9 +34,10 @@ def render(state, summary, games):
     else:
         img = layout_briefing.render(state, summary, games)
 
-    os.makedirs(config.OUTPUT_DIR, exist_ok=True)
-    out_path = os.path.join(config.OUTPUT_DIR, "current.png")
-    img.save(out_path)
-    logger.info("Rendered page %d to %s", state.page, out_path)
+    if getattr(config, "SAVE_RENDER_OUTPUT", False):
+        os.makedirs(config.OUTPUT_DIR, exist_ok=True)
+        out_path = os.path.join(config.OUTPUT_DIR, "current.png")
+        img.save(out_path)
+        logger.info("Rendered page %d to %s", state.page, out_path)
 
     return img

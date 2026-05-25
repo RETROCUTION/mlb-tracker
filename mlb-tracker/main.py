@@ -312,7 +312,7 @@ def _enter_live_mode(game_pk, auto=False):
     if live_data and live_data.get("status") != "Live":
         logger.info("Game %s is no longer live: %s", game_pk, live_data.get("status"))
         _remember_final_live_game(game_pk, live_data)
-        _request_display(full=True)
+        _request_display(full=True, clear=True)
         return False
 
     with _state_lock:
@@ -352,7 +352,7 @@ def _exit_live_mode(suppress_current=False):
         _live_buffer.clear()
 
     logger.info("Exited live game mode")
-    _request_display(full=True)
+    _request_display(full=True, clear=True)
 
 
 def _exit_pregame_mode():
@@ -364,7 +364,7 @@ def _exit_pregame_mode():
         state.pregame_seconds_remaining = None
 
     logger.info("Exited pregame screen")
-    _request_display(full=True)
+    _request_display(full=True, clear=True)
 
 
 def _exit_config_mode():
@@ -375,7 +375,7 @@ def _exit_config_mode():
 
     config_server.stop()
     logger.info("Exited config screen")
-    _request_display(full=True)
+    _request_display(full=True, clear=True)
 
 
 def _restart_after_config_save():

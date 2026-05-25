@@ -99,6 +99,11 @@ LOGO_DIR  = "assets/logos"
 CACHE_DIR = "cache"
 OUTPUT_DIR = "output"
 
+# Saving PNG debug frames every second is useful during development, but it can
+# slow a Pi Zero W enough to make the clock skip seconds.
+SAVE_RENDER_OUTPUT = False
+SAVE_DISPLAY_DEBUG_IMAGES = False
+
 MLB_BASE_URL = "https://statsapi.mlb.com/api/v1"
 
 FONT_SCORE   = "assets/fonts/BebasNeue-Regular.ttf"

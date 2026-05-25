@@ -44,6 +44,9 @@ def prepare_for_display(image, invert=False):
 
 
 def _save_debug_images(image, panel_img):
+    if not getattr(config, "SAVE_DISPLAY_DEBUG_IMAGES", False):
+        return
+
     os.makedirs(config.OUTPUT_DIR, exist_ok=True)
     image.save(os.path.join(config.OUTPUT_DIR, "current_normal.png"))
     panel_img.save(os.path.join(config.OUTPUT_DIR, "current_panel.png"))
