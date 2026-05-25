@@ -70,7 +70,7 @@ def render(state, game, seconds_remaining):
     img  = Image.new("1", (W, H), 255)
     draw = ImageDraw.Draw(img)
 
-    _draw_header(draw, state)
+    _draw_header(draw, state, game)
     _draw_logos(draw, img, game)
     _draw_team_names(draw, game)
     _draw_countdown(draw, seconds_remaining)
@@ -89,7 +89,7 @@ def render_countdown_zone(state, game, seconds_remaining):
 
     # Render everything so the buffer is correct, partial refresh
     # will only push the countdown region to the screen
-    _draw_header(draw, state)
+    _draw_header(draw, state, game)
     _draw_logos(draw, img, game)
     _draw_team_names(draw, game)
     _draw_countdown(draw, seconds_remaining)
@@ -98,10 +98,10 @@ def render_countdown_zone(state, game, seconds_remaining):
     return img
 
 
-def _draw_header(draw, state):
+def _draw_header(draw, state, game):
     draw.rectangle([0, 0, W, 44], fill=0)
 
-    title = f"{config.TEAM_NAME.upper()}  —  GAME DAY"
+    title = _game_date_label(game)
     fnt   = bold_font(18)
     tw    = text_w(draw, title, fnt)
     draw.text(((W - tw) // 2, 12), title, font=fnt, fill=255)
@@ -117,6 +117,16 @@ def _draw_header(draw, state):
     if state and state.stale:
         draw.rectangle([8, 26, 68, 38], fill=255)
         draw.text((12, 27), "OFFLINE", font=regular_font(9), fill=0)
+
+
+def _game_date_label(game):
+    try:
+        dt_utc = datetime.fromisoformat(game["date_utc"].replace("Z", "+00:00"))
+        dt_local = dt_utc.astimezone(config.LOCAL_TZ)
+    except Exception:
+        dt_local = datetime.now(config.LOCAL_TZ)
+
+    return dt_local.strftime("%B %-d, %Y").upper()
 
 
 def _draw_logos(draw, img, game):

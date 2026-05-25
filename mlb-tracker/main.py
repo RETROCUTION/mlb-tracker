@@ -71,10 +71,15 @@ state = AppState()
 
 _state_lock = threading.RLock()
 _render_lock = threading.Lock()
+_display_request_lock = threading.Lock()
+_sync_thread_lock = threading.Lock()
+_live_poll_thread_lock = threading.Lock()
 _force_full_next = True
 _force_clear_next = False
 _last_full_refresh = 0.0
 _live_buffer = deque(maxlen=600)
+_display_generation = 0
+_was_online = False
 
 
 # ---------------------------------------------------------------------------
@@ -121,11 +126,47 @@ def _find_next_upcoming_game(games):
 
 
 def _request_display(full=False, clear=False):
+    global _force_full_next, _force_clear_next, _display_generation
+    with _display_request_lock:
+        if full:
+            _force_full_next = True
+        if clear:
+            _force_clear_next = True
+        _display_generation += 1
+
+
+def _get_display_generation():
+    with _display_request_lock:
+        return _display_generation
+
+
+def _take_display_flags(force_full, now):
     global _force_full_next, _force_clear_next
-    if full:
-        _force_full_next = True
-    if clear:
-        _force_clear_next = True
+
+    with _display_request_lock:
+        do_full = (
+            force_full
+            or _force_full_next
+            or (now - _last_full_refresh >= FULL_REFRESH_INTERVAL)
+        )
+        clear_first = _force_clear_next
+
+        if do_full:
+            _force_full_next = False
+            _force_clear_next = False
+
+    return do_full, clear_first
+
+
+def _set_online_state(value):
+    global _was_online
+    with _state_lock:
+        _was_online = bool(value)
+
+
+def _get_online_state():
+    with _state_lock:
+        return _was_online
 
 
 # ---------------------------------------------------------------------------
@@ -330,6 +371,77 @@ def _poll_live_game():
         return
 
 
+def _start_live_poll_async():
+    if not _live_poll_thread_lock.acquire(blocking=False):
+        logger.debug("Live poll already running")
+        return False
+
+    def worker():
+        try:
+            _poll_live_game()
+        finally:
+            _live_poll_thread_lock.release()
+
+    thread = threading.Thread(target=worker, name="live-poll", daemon=True)
+    thread.start()
+    return True
+
+
+def _sync_interval_cycle():
+    previous_online = _get_online_state()
+    online = sync_manager.check_connectivity()
+
+    if online and not previous_online:
+        logger.info("Connectivity restored — syncing")
+        _do_sync()
+        _position_schedule()
+        _handle_auto_live(_load_games())
+        _request_display(full=True)
+
+    elif not online and previous_online:
+        logger.warning("Lost connectivity — showing offline state")
+        with _state_lock:
+            state.stale = True
+        _request_display(full=True)
+
+    elif online:
+        logger.info("Sync interval reached")
+
+        old_summary = _load_summary()
+        old_games = _load_games()
+
+        _do_sync()
+        _position_schedule()
+        _handle_auto_live(_load_games())
+
+        new_summary = _load_summary()
+        new_games = _load_games()
+
+        if _data_changed(old_summary, new_summary, old_games, new_games):
+            logger.info("Data changed")
+            _request_display(full=True)
+        else:
+            logger.info("Data unchanged")
+
+    _set_online_state(online)
+
+
+def _start_sync_async():
+    if not _sync_thread_lock.acquire(blocking=False):
+        logger.debug("Sync already running")
+        return False
+
+    def worker():
+        try:
+            _sync_interval_cycle()
+        finally:
+            _sync_thread_lock.release()
+
+    thread = threading.Thread(target=worker, name="sync-cycle", daemon=True)
+    thread.start()
+    return True
+
+
 def _handle_auto_live(games):
     live_pk = _find_live_game_pk(games)
 
@@ -527,19 +639,61 @@ def _screen_name():
         return "briefing"
 
 
+def _screen_signature():
+    with _state_lock:
+        return (
+            state.config_mode,
+            state.live_mode,
+            state.live_game_pk,
+            state.pregame_mode,
+            state.pregame_game.get("game_pk") if state.pregame_game else None,
+            state.page,
+            state.schedule_offset,
+        )
+
+
 def _do_render(force_full=False):
-    global _force_full_next, _force_clear_next, _last_full_refresh
+    global _last_full_refresh
 
     with _render_lock:
-        img = _render_to_img()
+        img = None
+        stable_generation = None
+        stable_signature = None
+        for attempt in range(3):
+            start_generation = _get_display_generation()
+            start_signature = _screen_signature()
+            img = _render_to_img()
+            end_generation = _get_display_generation()
+            end_signature = _screen_signature()
+
+            if (
+                start_generation == end_generation
+                and start_signature == end_signature
+            ):
+                stable_generation = end_generation
+                stable_signature = end_signature
+                break
+
+            logger.info(
+                "Screen changed during render; retrying frame (%d)",
+                attempt + 1,
+            )
+            stable_generation = end_generation
+            stable_signature = end_signature
+
+        if img is None:
+            return
+
+        if (
+            _get_display_generation() != stable_generation
+            or _screen_signature() != stable_signature
+        ):
+            logger.info("Screen changed before display; refreshing frame")
+            img = _render_to_img()
+
         invert = _should_invert_display()
         now = time.time()
-        do_full = (
-            force_full
-            or _force_full_next
-            or (now - _last_full_refresh >= FULL_REFRESH_INTERVAL)
-        )
-        clear_first = _force_clear_next
+        do_full, clear_first = _take_display_flags(force_full, now)
 
         if do_full:
             display_waveshare.show_full(
@@ -548,8 +702,6 @@ def _do_render(force_full=False):
                 clear_first=clear_first,
             )
             _last_full_refresh = time.time()
-            _force_full_next = False
-            _force_clear_next = False
             logger.info(
                 "Display updated full — screen=%s invert=%s clear=%s",
                 _screen_name(),
@@ -690,6 +842,7 @@ def _on_center_long():
     logger.info("CENTER long — force sync")
 
     online = sync_manager.check_connectivity()
+    _set_online_state(online)
 
     if online:
         _do_sync()
@@ -751,6 +904,20 @@ def _on_right_long():
 
 
 def _on_live():
+    with _state_lock:
+        in_live_mode = state.live_mode
+        in_pregame_mode = state.pregame_mode
+
+    if in_live_mode:
+        logger.info("LIVE button pressed — exit live mode")
+        _exit_live_mode(suppress_current=True)
+        return
+
+    if in_pregame_mode:
+        logger.info("LIVE button pressed — exit pregame screen")
+        _exit_pregame_mode()
+        return
+
     games = _load_games()
     game_pk = _find_live_game_pk(games)
 
@@ -858,6 +1025,7 @@ def main():
     _do_render(force_full=True)
 
     online = sync_manager.check_connectivity()
+    _set_online_state(online)
 
     if online:
         _do_sync()
@@ -871,7 +1039,7 @@ def main():
 
     last_sync_time = time.time()
     last_live_poll_time = 0.0
-    was_online = online
+    next_display_time = time.time()
 
     logger.info("Entering main loop")
 
@@ -885,54 +1053,23 @@ def main():
 
             if (
                 live_game_pk
-                and was_online
+                and _get_online_state()
                 and loop_start - last_live_poll_time >= LIVE_POLL_INTERVAL
             ):
-                _poll_live_game()
-                last_live_poll_time = loop_start
+                if _start_live_poll_async():
+                    last_live_poll_time = loop_start
 
             if loop_start - last_sync_time >= SYNC_INTERVAL:
-                online = sync_manager.check_connectivity()
-
-                if online and not was_online:
-                    logger.info("Connectivity restored — syncing")
-                    _do_sync()
-                    _position_schedule()
-                    _handle_auto_live(_load_games())
-                    _request_display(full=True)
-
-                elif not online and was_online:
-                    logger.warning("Lost connectivity — showing offline state")
-                    with _state_lock:
-                        state.stale = True
-                    _request_display(full=True)
-
-                elif online:
-                    logger.info("Sync interval reached")
-
-                    old_summary = _load_summary()
-                    old_games = _load_games()
-
-                    _do_sync()
-                    _position_schedule()
-                    _handle_auto_live(_load_games())
-
-                    new_summary = _load_summary()
-                    new_games = _load_games()
-
-                    if _data_changed(old_summary, new_summary, old_games, new_games):
-                        logger.info("Data changed")
-                        _request_display(full=True)
-                    else:
-                        logger.info("Data unchanged")
-
-                last_sync_time = loop_start
-                was_online = online
+                if _start_sync_async():
+                    last_sync_time = loop_start
 
             _do_render()
 
-            elapsed = time.time() - loop_start
-            time.sleep(max(0.05, DISPLAY_TICK_SECONDS - elapsed))
+            next_display_time += DISPLAY_TICK_SECONDS
+            now = time.time()
+            if next_display_time <= now:
+                next_display_time = now + DISPLAY_TICK_SECONDS
+            time.sleep(max(0.01, next_display_time - now))
 
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt — shutting down")
