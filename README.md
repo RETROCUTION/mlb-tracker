@@ -29,7 +29,7 @@ Buttons are optional.
 | Left | 5 | Scroll schedule backward |
 | Center | 6 | Cycle screens, or return from live/config screens |
 | Right | 13 | Scroll schedule forward |
-| Live | 26 | Open live game, pregame countdown, or no-game message |
+| Live | 26 | Open live game/pregame screen |
 | Left + Right | 5 + 13 | Hold both for 3 seconds to open config mode |
 
 ## Screenshots
