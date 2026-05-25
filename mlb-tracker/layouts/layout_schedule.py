@@ -90,7 +90,7 @@ def _draw_header(draw, img, state, games):
 
     draw.text(
         (46, 12),
-        f"{config.TEAM_NICKNAME.upper()} SCHEDULE  {config.CURRENT_SEASON}",
+        f"{config.TEAM_NICKNAME.upper()} SCHEDULE  {getattr(state, 'display_season', config.CURRENT_SEASON)}",
         font=title_fnt,
         fill=0
     )

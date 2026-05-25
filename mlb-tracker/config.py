@@ -1,3 +1,4 @@
+from datetime import datetime
 import zoneinfo
 import settings_loader
 
@@ -54,7 +55,10 @@ TEAM_NICKNAME  = _team_nickname(TEAM_NAME)
 # Keep DODGERS_TEAM_ID as an alias so existing code doesn't break
 DODGERS_TEAM_ID = TEAM_ID
 
-CURRENT_SEASON = 2026
+# Leave as None for automatic year-to-year rollover. Set to a year only for
+# testing or if MLB schedule/standings data needs to be pinned temporarily.
+SEASON_OVERRIDE = None
+CURRENT_SEASON = SEASON_OVERRIDE or datetime.now(LOCAL_TZ).year
 
 DISPLAY_W = 800
 DISPLAY_H = 480

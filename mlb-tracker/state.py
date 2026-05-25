@@ -7,6 +7,7 @@ class AppState:
         self.page                = config.PAGE_BRIEFING
         self.schedule_offset     = 0
         self.schedule_game_count = 0
+        self.display_season      = config.CURRENT_SEASON
         self.stale               = True
         self.last_sync_time      = None
         self.force_sync          = False

@@ -116,6 +116,13 @@ journalctl -u mlb-tracker -n 150 --no-pager -l
 
 The service is enabled automatically and starts again after reboot.
 
+## Offseason Behavior
+
+MLB Tracker rolls seasons forward automatically. After the World Series, it can
+continue showing the completed season's final scores, schedule, and rankings.
+Before the next season begins, the briefing screen shows an offseason notice so
+the display still remains useful instead of going blank.
+
 ## Button Reconfiguration Shortcut
 
 Hold LEFT and RIGHT together for 3 seconds to show reconfiguration instructions

@@ -488,6 +488,8 @@ def _render_to_img():
 
     with _state_lock:
         state.schedule_game_count = len(games)
+        if summary:
+            state.display_season = summary.get("season", config.CURRENT_SEASON)
 
     _update_pregame_state(games)
 

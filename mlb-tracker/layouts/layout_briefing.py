@@ -845,6 +845,22 @@ def _draw_outlook_bar(draw, summary):
     if not summary:
         return
 
+    if summary.get("season_not_started"):
+        message = summary.get("season_message") or "Next season has not started yet"
+        message = message.upper()
+        msg_fnt = bold_font(14)
+        if text_w(draw, message, msg_fnt) > W - 24:
+            msg_fnt = bold_font(12)
+        msg_w = text_w(draw, message, msg_fnt)
+        draw.rectangle([0, bar_y, W, H], fill=0)
+        draw.text(
+            ((W - msg_w) // 2, bar_y + 10),
+            message,
+            font=msg_fnt,
+            fill=255,
+        )
+        return
+
     index = summary.get("ws_index", 0)
     label = summary.get("ws_label", ws_label_fallback(index))
 

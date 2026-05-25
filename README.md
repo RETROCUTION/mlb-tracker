@@ -41,6 +41,7 @@ Fresh installs require each user to choose their own team and timezone.
 - Extra-innings line score view
 - Full-screen partial refresh for fast e-paper updates without constant full flashes
 - Per-page display inversion support for sharper schedule/rankings output
+- Automatic season rollover, with an offseason notice before the next season starts
 
 ## Button Wiring
 

@@ -5,13 +5,14 @@ SESSION = requests.Session()
 SESSION.headers.update({"User-Agent": "mlb-tracker/1.0"})
 
 
-def fetch_schedule():
+def fetch_schedule(season=None):
+    season = season or config.CURRENT_SEASON
     url = (
         f"{config.MLB_BASE_URL}/schedule"
         f"?sportId=1"
         f"&teamId={config.TEAM_ID}"
-        f"&startDate={config.CURRENT_SEASON}-03-20"
-        f"&endDate={config.CURRENT_SEASON}-11-15"
+        f"&startDate={season}-03-20"
+        f"&endDate={season}-11-15"
         f"&hydrate=team,linescore,probablePitcher,decisions"
     )
     resp = SESSION.get(url, timeout=15)
@@ -19,11 +20,12 @@ def fetch_schedule():
     return resp.json()
 
 
-def fetch_standings():
+def fetch_standings(season=None):
+    season = season or config.CURRENT_SEASON
     url = (
         f"{config.MLB_BASE_URL}/standings"
         f"?leagueId=103,104"
-        f"&season={config.CURRENT_SEASON}"
+        f"&season={season}"
         f"&standingsTypes=regularSeason"
         f"&hydrate=team,league,division,sport,record,standings"
     )

@@ -53,9 +53,13 @@ def render(state, summary):
 def _draw_header(draw, state):
     draw.rectangle([0, 0, W, HEADER_H], fill=0)
 
+    season = config.CURRENT_SEASON
+    if getattr(state, "display_season", None):
+        season = state.display_season
+
     draw.text(
         (10, 12),
-        f"MLB RANKINGS  {config.CURRENT_SEASON}",
+        f"MLB RANKINGS  {season}",
         font=bold_font(22),
         fill=255
     )
