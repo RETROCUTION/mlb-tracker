@@ -839,7 +839,6 @@ def _draw_record_bar(draw, summary):
 
     n       = len(stats)       # 6
     col_w   = W // n           # 133px
-    val_fnt = bold_font(REC_VAL_SIZE)
     lbl_fnt = regular_font(REC_LBL_SIZE)
 
     for i, (val, lbl) in enumerate(stats):
@@ -855,8 +854,52 @@ def _draw_record_bar(draw, summary):
                 thickness=1,
                 fill=0
             )
-        draw_text_centered(draw, x_start, bar_y + REC_VAL_Y_OFF, cw, val, val_fnt)
-        draw_text_centered(draw, x_start, bar_y + REC_LBL_Y_OFF, cw, lbl, lbl_fnt, fill=0)
+        _draw_record_stat(draw, x_start, bar_y, cw, val, lbl, lbl_fnt)
+
+
+def _draw_record_stat(draw, x, y, width, value, label, label_font):
+    value = str(value)
+    label = str(label)
+    max_w = width - 8
+
+    value_size = REC_VAL_SIZE
+    value_font = bold_font(value_size)
+    while value_size > 11 and text_w(draw, value, value_font) > max_w:
+        value_size -= 1
+        value_font = bold_font(value_size)
+
+    if text_w(draw, value, value_font) <= max_w:
+        draw_text_centered(draw, x, y + REC_VAL_Y_OFF, width, value, value_font)
+        draw_text_centered(draw, x, y + REC_LBL_Y_OFF, width, label, label_font, fill=0)
+        return
+
+    parts = value.split()
+    if len(parts) > 1:
+        line1 = " ".join(parts[:-1])
+        line2 = parts[-1]
+    else:
+        line1 = value
+        line2 = ""
+
+    value_size = 13
+    value_font = bold_font(value_size)
+    while (
+        value_size > 9
+        and (
+            text_w(draw, line1, value_font) > max_w
+            or text_w(draw, line2, value_font) > max_w
+        )
+    ):
+        value_size -= 1
+        value_font = bold_font(value_size)
+
+    draw_text_centered(draw, x, y + 2, width, line1, value_font)
+    if line2:
+        draw_text_centered(draw, x, y + 17, width, line2, value_font)
+        label_y = y + 34
+    else:
+        label_y = y + REC_LBL_Y_OFF
+    draw_text_centered(draw, x, label_y, width, label, label_font, fill=0)
 
 
 def _draw_outlook_bar(draw, summary):
