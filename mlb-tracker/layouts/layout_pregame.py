@@ -101,7 +101,7 @@ def render_countdown_zone(state, game, seconds_remaining):
 def _draw_header(draw, state, game):
     draw.rectangle([0, 0, W, 44], fill=0)
 
-    title = "GAME DAY"
+    title = "UPCOMING GAME"
     fnt   = bold_font(18)
     tw    = text_w(draw, title, fnt)
     draw.text(((W - tw) // 2, 12), title, font=fnt, fill=255)

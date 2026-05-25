@@ -58,8 +58,11 @@ def format_time_local(dt):
     return dt.strftime("%-I:%M %p PT")
 
 
-def format_clock_local(dt):
-    return dt.strftime("%-I:%M:%S %p PT")
+def format_clock_local(dt, show_seconds=True):
+    if show_seconds:
+        return dt.strftime("%-I:%M:%S %p PT")
+
+    return dt.strftime("%-I:%M %p PT")
 
 
 def format_header_date(dt):
@@ -84,8 +87,8 @@ def ordinal(n):
 
 def draw_clock_right(draw, right_x, y, now, fnt, fill=0, label=None,
                      label_font=None, gap=6, show_date=False,
-                     date_font=None, date_gap=15):
-    time_str = format_clock_local(now)
+                     date_font=None, date_gap=15, show_seconds=False):
+    time_str = format_clock_local(now, show_seconds=show_seconds)
     tw = text_w(draw, time_str, fnt)
 
     if label:
