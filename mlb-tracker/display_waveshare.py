@@ -18,6 +18,8 @@ except ImportError:
 
 _epd = None
 _partial_ready = False
+_partial_count = 0
+_last_partial_timing_log = 0.0
 
 
 def _get_epd():
@@ -39,6 +41,9 @@ def prepare_for_display(image, invert=False):
     """
     if invert:
         return ImageOps.invert(image.convert("L")).convert("RGB")
+
+    if image.mode == "1":
+        return image
 
     return image.convert("1")
 
@@ -105,9 +110,11 @@ def show_partial_fullscreen(image, invert=False):
     Fast update path proven by clock.py: send the whole 800x480 buffer through
     display_Partial(), never a small rectangle.
     """
-    global _partial_ready
+    global _partial_ready, _partial_count, _last_partial_timing_log
 
+    start = time.monotonic()
     panel_img = prepare_for_display(image, invert=invert)
+    prep_done = time.monotonic()
     _save_debug_images(image, panel_img)
 
     epd = _get_epd()
@@ -119,14 +126,38 @@ def show_partial_fullscreen(image, invert=False):
             epd.init_part()
             _partial_ready = True
 
+        buffer_start = time.monotonic()
+        buffer = epd.getbuffer(panel_img)
+        buffer_done = time.monotonic()
         epd.display_Partial(
-            epd.getbuffer(panel_img),
+            buffer,
             0,
             0,
             epd.width,
             epd.height,
         )
-        logger.debug("Display updated partial fullscreen")
+        done = time.monotonic()
+        _partial_count += 1
+
+        slow_refresh = done - start >= 0.95
+        should_log_timing = (
+            done - _last_partial_timing_log >= 30
+            or (slow_refresh and done - _last_partial_timing_log >= 10)
+        )
+
+        if should_log_timing:
+            _last_partial_timing_log = done
+            logger.info(
+                "Partial refresh timing — total=%.2fs prep=%.2fs buffer=%.2fs epd=%.2fs invert=%s count=%d",
+                done - start,
+                prep_done - start,
+                buffer_done - buffer_start,
+                done - buffer_done,
+                invert,
+                _partial_count,
+            )
+        else:
+            logger.debug("Display updated partial fullscreen")
     except Exception as e:
         _partial_ready = False
         logger.error("Display partial refresh error: %s", e)
