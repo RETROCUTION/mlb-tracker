@@ -120,17 +120,10 @@ def _draw_header(draw, state):
 
 
 def _draw_logos(draw, img, game):
-    """Draw home and away logos with VS in the centre."""
-    my_logo_file  = config.TEAM_LOGO
-    opp_logo_file = f"{game.get('opponent_abbr', 'MLB')}.png"
-
-    # Which side is which
-    if game.get("home_away") == "home":
-        left_logo_file  = opp_logo_file
-        right_logo_file = my_logo_file
-    else:
-        left_logo_file  = my_logo_file
-        right_logo_file = opp_logo_file
+    """Draw tracked-team and opponent logos with VS in the centre."""
+    sides = _matchup_sides(game)
+    left_logo_file = sides["left"]["logo"]
+    right_logo_file = sides["right"]["logo"]
 
     logo_y = 60
 
@@ -165,19 +158,11 @@ def _draw_logos(draw, img, game):
 
 def _draw_team_names(draw, game):
     """Team full names below logos."""
-    opp_name = game.get("opponent_name", "Opponent")
-    my_name  = config.TEAM_NAME
-
-    if game.get("home_away") == "home":
-        left_name  = opp_name
-        right_name = my_name
-        left_label  = "AWAY"
-        right_label = "HOME"
-    else:
-        left_name  = my_name
-        right_name = opp_name
-        left_label  = "AWAY"
-        right_label = "HOME"
+    sides = _matchup_sides(game)
+    left_name = sides["left"]["name"]
+    right_name = sides["right"]["name"]
+    left_label = sides["left"]["label"]
+    right_label = sides["right"]["label"]
 
     name_y  = 222   # logo ends at 60+150=210, give 12px gap
     label_y = 242
@@ -216,16 +201,12 @@ def _draw_countdown(draw, seconds_remaining):
         draw.text(((W - mw) // 2, zone_y + 8), msg, font=msg_fnt, fill=0)
         return
 
-    # Format as M:SS or just seconds
-    mins = seconds_remaining // 60
+    seconds_remaining = max(0, int(seconds_remaining))
+    hours = seconds_remaining // 3600
+    mins = (seconds_remaining % 3600) // 60
     secs = seconds_remaining % 60
-
-    if mins > 0:
-        time_str = f"{mins}:{secs:02d}"
-        lbl_str  = "GAME STARTS IN"
-    else:
-        time_str = f"{seconds_remaining}"
-        lbl_str  = "SECONDS UNTIL FIRST PITCH"
+    time_str = f"{hours:02d}:{mins:02d}:{secs:02d}"
+    lbl_str  = "GAME STARTS IN"
 
     lbl_fnt  = regular_font(13)
     time_fnt = score_font(64)
@@ -235,6 +216,25 @@ def _draw_countdown(draw, seconds_remaining):
 
     tw = text_w(draw, time_str, time_fnt)
     draw.text(((W - tw) // 2, zone_y + 20), time_str, font=time_fnt, fill=0)
+
+
+def _matchup_sides(game):
+    """Keep the tracked team on the left, regardless of home/away status."""
+    my_label = "HOME" if game.get("home_away") == "home" else "AWAY"
+    opp_label = "AWAY" if my_label == "HOME" else "HOME"
+
+    return {
+        "left": {
+            "name": config.TEAM_NAME,
+            "logo": config.TEAM_LOGO,
+            "label": my_label,
+        },
+        "right": {
+            "name": game.get("opponent_name", "Opponent"),
+            "logo": f"{game.get('opponent_abbr', 'MLB')}.png",
+            "label": opp_label,
+        },
+    }
 
 
 def _draw_footer(draw, game):

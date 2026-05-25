@@ -511,10 +511,7 @@ def _should_invert_display():
         if state.live_mode or state.pregame_mode:
             return False
 
-        return state.page in (
-            config.PAGE_SCHEDULE,
-            config.PAGE_STANDINGS,
-        )
+        return state.page == config.PAGE_STANDINGS
 
 
 def _screen_name():
