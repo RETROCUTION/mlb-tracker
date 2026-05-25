@@ -111,12 +111,13 @@ def update_dynamic(img, state, game, seconds_remaining):
 
 
 def clear_countdown(img):
-    """Blank the countdown area while a slow full refresh is in progress."""
+    """Hide only the timer while a slow full refresh is in progress."""
     if img is None:
         return False
 
     draw = ImageDraw.Draw(img)
     draw.rectangle([0, ZONE_COUNTDOWN_Y1, W, ZONE_COUNTDOWN_Y2], fill=255)
+    _draw_countdown_label(draw)
     return True
 
 
@@ -259,6 +260,23 @@ def _draw_countdown(draw, seconds_remaining):
 
     tw = text_w(draw, time_str, time_fnt)
     draw.text(((W - tw) // 2, block_y + lbl_h + gap), time_str, font=time_fnt, fill=0)
+
+
+def _draw_countdown_label(draw):
+    zone_y = ZONE_COUNTDOWN_Y1
+    zone_h = ZONE_COUNTDOWN_Y2 - ZONE_COUNTDOWN_Y1
+    lbl_str = "GAME STARTS IN"
+    placeholder_time = "00:00:00"
+
+    lbl_fnt = regular_font(13)
+    time_fnt = score_font(64)
+    lbl_h = text_h(draw, lbl_str, lbl_fnt)
+    time_h = text_h(draw, placeholder_time, time_fnt)
+    gap = 4
+    block_y = zone_y + (zone_h - lbl_h - gap - time_h) // 2 - 2
+
+    lw = text_w(draw, lbl_str, lbl_fnt)
+    draw.text(((W - lw) // 2, block_y), lbl_str, font=lbl_fnt, fill=0)
 
 
 def _matchup_sides(game):

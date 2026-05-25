@@ -1333,7 +1333,8 @@ def main():
                     DISPLAY_TICK_SECONDS,
                     elapsed - DISPLAY_TICK_SECONDS,
                 )
-                time.sleep(0.01)
+                if not _pregame_should_focus_countdown():
+                    time.sleep(0.01)
             else:
                 sleep_for = DISPLAY_TICK_SECONDS - (now % DISPLAY_TICK_SECONDS)
                 time.sleep(max(0.01, min(sleep_for, DISPLAY_TICK_SECONDS - elapsed)))
