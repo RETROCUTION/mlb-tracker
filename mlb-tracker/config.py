@@ -104,6 +104,7 @@ OUTPUT_DIR = "output"
 SAVE_RENDER_OUTPUT = False
 SAVE_DISPLAY_DEBUG_IMAGES = False
 LOG_DISPLAY_TIMING = False
+HEADER_CLOCK_FONT_SIZE = 12
 
 MLB_BASE_URL = "https://statsapi.mlb.com/api/v1"
 

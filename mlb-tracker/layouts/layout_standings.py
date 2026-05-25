@@ -65,7 +65,7 @@ def _draw_header(draw, state):
     )
 
     label_fnt = regular_font(9)
-    val_fnt   = regular_font(11)
+    val_fnt   = regular_font(config.HEADER_CLOCK_FONT_SIZE)
     now_local = datetime.now(TZ)
 
     if not state.stale:

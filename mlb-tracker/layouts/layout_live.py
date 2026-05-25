@@ -111,7 +111,7 @@ def _draw_no_game(draw):
         W - 12,
         13,
         datetime.now(config.LOCAL_TZ),
-        regular_font(12),
+        regular_font(config.HEADER_CLOCK_FONT_SIZE),
         fill=255,
     )
 
@@ -241,7 +241,7 @@ def _draw_zone_a(draw, g):
         W - 12,
         52,
         datetime.now(config.LOCAL_TZ),
-        regular_font(10),
+        regular_font(config.HEADER_CLOCK_FONT_SIZE),
         fill=0,
     )
 

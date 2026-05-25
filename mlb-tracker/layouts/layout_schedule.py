@@ -88,7 +88,7 @@ def _draw_header(draw, img, state, games):
     title_fnt = bold_font(20)
     nav_fnt = regular_font(12)
     page_fnt = regular_font(11)
-    clock_fnt = regular_font(12)
+    clock_fnt = regular_font(config.HEADER_CLOCK_FONT_SIZE)
 
     draw.text(
         (46, 12),

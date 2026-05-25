@@ -30,7 +30,7 @@ LOGO_SIZE          = 36
 LOGO_X             = 8
 LOGO_Y             = 4
 TITLE_X            = 52
-HEADER_DT_SIZE     = 12
+HEADER_DT_SIZE     = config.HEADER_CLOCK_FONT_SIZE
 
 LG_LABEL_Y         = 6
 LG_LABEL_SIZE      = 11
@@ -236,7 +236,7 @@ def _draw_header(draw, img, state):
             W - bw - 16,
             26,
             now_local,
-            regular_font(11),
+            regular_font(HEADER_DT_SIZE),
             fill=255,
         )
 

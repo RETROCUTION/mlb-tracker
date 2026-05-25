@@ -101,7 +101,7 @@ def render_countdown_zone(state, game, seconds_remaining):
 def _draw_header(draw, state, game):
     draw.rectangle([0, 0, W, 44], fill=0)
 
-    title = _game_date_label(game)
+    title = "GAME DAY"
     fnt   = bold_font(18)
     tw    = text_w(draw, title, fnt)
     draw.text(((W - tw) // 2, 12), title, font=fnt, fill=255)
@@ -110,7 +110,7 @@ def _draw_header(draw, state, game):
         W - 8,
         13,
         datetime.now(config.LOCAL_TZ),
-        regular_font(10),
+        regular_font(config.HEADER_CLOCK_FONT_SIZE),
         fill=255,
     )
 
@@ -205,7 +205,7 @@ def _draw_countdown(draw, seconds_remaining):
     draw.rectangle([0, zone_y, W, ZONE_COUNTDOWN_Y2], fill=255)
 
     if seconds_remaining <= 0:
-        msg     = "FIRST PITCH!"
+        msg     = "PLAY BALL!"
         msg_fnt = bold_font(36)
         mw      = text_w(draw, msg, msg_fnt)
         draw.text(((W - mw) // 2, zone_y + 8), msg, font=msg_fnt, fill=0)
@@ -257,14 +257,22 @@ def _draw_footer(draw, game):
     try:
         dt_utc   = datetime.fromisoformat(game["date_utc"].replace("Z", "+00:00"))
         dt_local = dt_utc.astimezone(TZ)
+        date_str = dt_local.strftime("%B %-d, %Y").upper()
         time_str = dt_local.strftime("%-I:%M %p PT")
     except Exception:
+        date_str = ""
         time_str = ""
 
     venue    = game.get("venue", "")
     ha       = venue
     info_str = f"{time_str}  •  {ha}" if time_str else ha
 
-    fnt = regular_font(14)
-    iw  = text_w(draw, info_str, fnt)
-    draw.text(((W - iw) // 2, ZONE_COUNTDOWN_Y2 + 12), info_str, font=fnt, fill=0)
+    date_fnt = bold_font(13)
+    info_fnt = regular_font(14)
+
+    if date_str:
+        dw = text_w(draw, date_str, date_fnt)
+        draw.text(((W - dw) // 2, ZONE_COUNTDOWN_Y2 + 8), date_str, font=date_fnt, fill=0)
+
+    iw  = text_w(draw, info_str, info_fnt)
+    draw.text(((W - iw) // 2, ZONE_COUNTDOWN_Y2 + 30), info_str, font=info_fnt, fill=0)

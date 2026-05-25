@@ -61,6 +61,8 @@ SYNC_INTERVAL = 60
 LIVE_POLL_INTERVAL = getattr(config, "LIVE_POLL_INTERVAL_SECONDS", 1)
 FULL_REFRESH_INTERVAL = 15 * 60
 PREGAME_WINDOW_SECONDS = 10 * 60
+PREGAME_POST_START_GRACE_SECONDS = 10 * 60
+PREGAME_LIVE_CHECK_INTERVAL = 5
 BOOT_DELAY = 0
 
 # ---------------------------------------------------------------------------
@@ -84,6 +86,7 @@ _input_transition_active = False
 _clock_paused = False
 _last_frame_img = None
 _last_frame_signature = None
+_last_pregame_live_check = 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -510,6 +513,57 @@ def _handle_auto_live(games):
     _enter_live_mode(live_pk, auto=True)
 
 
+def _maybe_enter_live_from_pregame(now=None):
+    global _last_pregame_live_check
+
+    if now is None:
+        now = time.time()
+
+    if now - _last_pregame_live_check < PREGAME_LIVE_CHECK_INTERVAL:
+        return
+
+    with _state_lock:
+        if (
+            not state.pregame_mode
+            or not state.pregame_game
+            or state.pregame_seconds_remaining is None
+            or state.pregame_seconds_remaining > 0
+        ):
+            return
+
+        game_pk = state.pregame_game.get("game_pk")
+
+    if not game_pk or not _get_online_state():
+        return
+
+    _last_pregame_live_check = now
+    logger.info("Pregame countdown reached zero; checking for live game")
+    live_data = _fetch_live_game_data(game_pk)
+
+    if not live_data or live_data.get("status") != "Live":
+        logger.debug(
+            "Pregame game %s is not live yet: %s",
+            game_pk,
+            live_data.get("status") if live_data else "no data",
+        )
+        return
+
+    _append_live_sample(game_pk, live_data)
+
+    with _state_lock:
+        state.live_mode = True
+        state.live_game_pk = game_pk
+        state.live_final_game_data = None
+        state.live_suppressed_game_pk = None
+        state.pregame_mode = False
+        state.pregame_manual = False
+        state.pregame_game = None
+        state.pregame_seconds_remaining = None
+
+    logger.info("Pregame countdown switched to live game mode for gamePk %s", game_pk)
+    _request_display(full=True, clear=True)
+
+
 # ---------------------------------------------------------------------------
 # Render
 # ---------------------------------------------------------------------------
@@ -556,9 +610,9 @@ def _update_pregame_state(games):
             continue
 
         seconds = int((start_utc - now_utc).total_seconds())
-        if 0 <= seconds <= PREGAME_WINDOW_SECONDS:
+        if -PREGAME_POST_START_GRACE_SECONDS <= seconds <= PREGAME_WINDOW_SECONDS:
             pregame = g
-            seconds_remaining = seconds
+            seconds_remaining = max(0, seconds)
             break
 
     with _state_lock:
@@ -1188,6 +1242,7 @@ def main():
                 if _start_sync_async():
                     last_sync_time = loop_start
 
+            _maybe_enter_live_from_pregame(loop_start)
             _do_render()
 
             now = time.time()

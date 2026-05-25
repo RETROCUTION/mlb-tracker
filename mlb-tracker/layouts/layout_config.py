@@ -20,7 +20,7 @@ def render(state):
         W - 12,
         13,
         datetime.now(config.LOCAL_TZ),
-        regular_font(10),
+        regular_font(config.HEADER_CLOCK_FONT_SIZE),
         fill=255,
     )
 
