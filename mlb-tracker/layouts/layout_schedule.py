@@ -25,12 +25,23 @@ ROW_H = ROW_AREA_H // PAGE_SIZE
 COL = {
     "date": 10,
     "opp": 140,
-    "ha": 430,
-    "score": 510,
-    "result": 650,
+    "ha": 400,
+    "score": 470,
+    "result": 625,
+}
+
+COL_W = {
+    "ha": 62,
+    "score": 140,
+    "result": 52,
 }
 
 _logo_cache = {}
+
+
+def _draw_centered(draw, x, y, width, text, fnt, fill=0):
+    tw = text_w(draw, text, fnt)
+    draw.text((x + (width - tw) // 2, y), text, font=fnt, fill=fill)
 
 
 def _load_logo():
@@ -119,7 +130,7 @@ def _draw_header(draw, img, state, games):
         date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
     )
 
-    score_center_x = (COL["score"] + COL["result"]) // 2
+    score_center_x = COL["score"] + COL_W["score"] // 2
     pw = text_w(draw, page_str, page_fnt)
     draw.text((score_center_x - pw // 2, 7), page_str, font=page_fnt, fill=255)
 
@@ -144,9 +155,25 @@ def _draw_column_headers(draw):
 
     draw.text((COL["date"], hdr_y + 8), "DATE", font=fnt, fill=fill)
     draw.text((COL["opp"], hdr_y + 8), "OPPONENT", font=fnt, fill=fill)
-    draw.text((COL["ha"], hdr_y + 8), "H/A", font=fnt, fill=fill)
-    draw.text((COL["score"], hdr_y + 8), "SCORE / TIME", font=fnt, fill=fill)
-    draw.text((COL["result"], hdr_y + 8), "W/L", font=fnt, fill=fill)
+    _draw_centered(draw, COL["ha"], hdr_y + 8, COL_W["ha"], "H/A", fnt, fill=fill)
+    _draw_centered(
+        draw,
+        COL["score"],
+        hdr_y + 8,
+        COL_W["score"],
+        "SCORE / TIME",
+        fnt,
+        fill=fill,
+    )
+    _draw_centered(
+        draw,
+        COL["result"],
+        hdr_y + 8,
+        COL_W["result"],
+        "W/L",
+        fnt,
+        fill=fill,
+    )
 
     draw_hline(draw, 0, hdr_y + COL_HDR_H, W, thickness=1, fill=0)
 
@@ -213,12 +240,7 @@ def _draw_rows(draw, state, games):
 
         ha_str = "Home" if g["home_away"] == "home" else "Away"
 
-        draw.text(
-            (COL["ha"], mid_y - 7),
-            ha_str,
-            font=detail_fnt,
-            fill=fg
-        )
+        _draw_centered(draw, COL["ha"], mid_y - 7, COL_W["ha"], ha_str, detail_fnt, fill=fg)
 
         status = g["status"]
 
@@ -226,51 +248,69 @@ def _draw_rows(draw, state, games):
             lad = g.get("dodgers_score") or 0
             opp = g.get("opponent_score") or 0
 
-            draw.text(
-                (COL["score"], mid_y - 9),
+            _draw_centered(
+                draw,
+                COL["score"],
+                mid_y - 9,
+                COL_W["score"],
                 f"{lad} - {opp}",
-                font=score_fnt,
-                fill=fg
+                score_fnt,
+                fill=fg,
             )
 
-            draw.text(
-                (COL["result"], mid_y - 9),
+            _draw_centered(
+                draw,
+                COL["result"],
+                mid_y - 9,
+                COL_W["result"],
                 g.get("result", ""),
-                font=result_fnt,
-                fill=fg
+                result_fnt,
+                fill=fg,
             )
 
         elif status == "Live":
             lad = g.get("dodgers_score") or 0
             opp = g.get("opponent_score") or 0
 
-            draw.text(
-                (COL["score"], mid_y - 13),
+            _draw_centered(
+                draw,
+                COL["score"],
+                mid_y - 13,
+                COL_W["score"],
                 f"{lad} - {opp}",
-                font=score_fnt,
-                fill=fg
+                score_fnt,
+                fill=fg,
             )
 
-            draw.text(
-                (COL["score"], mid_y + 5),
+            _draw_centered(
+                draw,
+                COL["score"],
+                mid_y + 5,
+                COL_W["score"],
                 "LIVE",
-                font=live_fnt,
-                fill=fg
+                live_fnt,
+                fill=fg,
             )
 
         else:
             time_str = dt_local.strftime("%-I:%M %p PT")
 
-            draw.text(
-                (COL["score"], mid_y - 7),
+            _draw_centered(
+                draw,
+                COL["score"],
+                mid_y - 7,
+                COL_W["score"],
                 time_str,
-                font=detail_fnt,
-                fill=fg
+                detail_fnt,
+                fill=fg,
             )
 
-            draw.text(
-                (COL["result"], mid_y - 7),
+            _draw_centered(
+                draw,
+                COL["result"],
+                mid_y - 7,
+                COL_W["result"],
                 "-",
-                font=result_fnt,
-                fill=fg
+                result_fnt,
+                fill=fg,
             )
