@@ -1,9 +1,9 @@
 # MLB Tracker
 
 MLB Tracker is a Raspberry Pi e-paper dashboard for baseball fans. It shows
-team briefing info, schedule, MLB rankings, pregame/live game screens, running
-seconds, live scores, inning state, pitch count, runners, and e-paper friendly
-full-screen partial refresh.
+team briefing info, schedule, MLB rankings, pregame/live game screens, live
+scores, inning state, pitch count, runners, and e-paper friendly full-screen
+partial refresh.
 
 Fresh installs require each user to choose their own team and timezone.
 
@@ -35,9 +35,9 @@ Fresh installs require each user to choose their own team and timezone.
 - Live button opens the pregame VS screen on game day if the game has not started
 - Live button shows a no-live-game popup when there is no live or same-day upcoming game
 - Live score, inning, count, outs, pitch number, runners, runner names, and line score
+- Live game data can poll about once per second, with a configurable broadcast delay
 - Extra-innings line score view
-- Running seconds clock on every screen
-- Full-screen partial refresh for fast e-paper updates
+- Full-screen partial refresh for fast e-paper updates without constant full flashes
 - Per-page display inversion support for sharper schedule/rankings output
 
 ## Button Wiring
