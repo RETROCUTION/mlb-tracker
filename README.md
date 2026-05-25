@@ -1,9 +1,8 @@
 # MLB Tracker
 
-MLB Tracker is a Raspberry Pi e-paper dashboard for following any MLB team.
-During setup, you choose the team and timezone. The display then shows team
-briefing info, schedule, rankings, pregame countdowns, and automatic live-game
-updates.
+MLB Tracker turns a Raspberry Pi and Waveshare e-paper display into a simple
+baseball dashboard. Pick your team during setup, and it shows the latest team
+status, schedule, rankings, pregame countdowns, and live game updates.
 
 ## Parts
 
@@ -14,18 +13,12 @@ updates.
 - Raspberry Pi power supply
 - Optional momentary push buttons
 
-## Features
+## What It Does
 
-- Team and timezone setup on first install
-- Briefing screen with last game, next game, record, rankings, and season outlook
-- Schedule screen with left/right button scrolling
-- MLB rankings screen
-- Pregame VS/countdown screen before first pitch
-- Automatic live-game screen when the selected team is playing
-- Manual live-game button on GPIO 26
-- Live score, inning, count, outs, pitch number, runners, runner names, and line score
-- Config options for changing team, timezone, and Wi-Fi
-- Automatic season rollover with offseason World Series/countdown info
+- Tracks any MLB team you choose.
+- Shows last game, next game, schedule, rankings, and live game info.
+- Automatically switches to the live game screen when your team is playing.
+- Includes setup and reconfigure options for team, timezone, and Wi-Fi.
 
 ## Button Wiring
 
