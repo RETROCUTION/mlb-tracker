@@ -109,10 +109,12 @@ def _draw_no_game(draw):
     draw_clock_right(
         draw,
         W - 12,
-        13,
+        7,
         datetime.now(config.LOCAL_TZ),
         regular_font(config.HEADER_CLOCK_FONT_SIZE),
         fill=255,
+        show_date=True,
+        date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
     )
 
     box_x, box_y = 150, 130
@@ -239,10 +241,12 @@ def _draw_zone_a(draw, g):
     draw_clock_right(
         draw,
         W - 12,
-        52,
+        40,
         datetime.now(config.LOCAL_TZ),
         regular_font(config.HEADER_CLOCK_FONT_SIZE),
         fill=0,
+        show_date=True,
+        date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
     )
 
     draw_hline(draw, 0, ZONE_A_H - 1, W, thickness=2, fill=0)

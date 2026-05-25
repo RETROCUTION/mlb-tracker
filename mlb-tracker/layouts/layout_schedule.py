@@ -106,7 +106,16 @@ def _draw_header(draw, img, state, games):
     current_page = (state.schedule_offset // PAGE_SIZE) + 1
     page_str = f"Page {current_page} / {total_pages}"
 
-    draw_clock_right(draw, W - 12, 3, datetime.now(TZ), clock_fnt, fill=255)
+    draw_clock_right(
+        draw,
+        W - 12,
+        3,
+        datetime.now(TZ),
+        clock_fnt,
+        fill=255,
+        show_date=True,
+        date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
+    )
 
     draw.text((W - 220, 24), "< PREV", font=nav_fnt, fill=255)
 

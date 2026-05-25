@@ -108,10 +108,12 @@ def _draw_header(draw, state, game):
     draw_clock_right(
         draw,
         W - 8,
-        13,
+        7,
         datetime.now(config.LOCAL_TZ),
         regular_font(config.HEADER_CLOCK_FONT_SIZE),
         fill=255,
+        show_date=True,
+        date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
     )
 
     if state and state.stale:

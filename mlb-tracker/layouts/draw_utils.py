@@ -62,6 +62,10 @@ def format_clock_local(dt):
     return dt.strftime("%-I:%M:%S %p PT")
 
 
+def format_header_date(dt):
+    return dt.strftime("%b %-d, %Y").upper()
+
+
 def format_datetime_short(dt):
     return dt.strftime("%a, %b %-d, %Y  %-I:%M %p PT")
 
@@ -79,7 +83,8 @@ def ordinal(n):
 
 
 def draw_clock_right(draw, right_x, y, now, fnt, fill=0, label=None,
-                     label_font=None, gap=6):
+                     label_font=None, gap=6, show_date=False,
+                     date_font=None, date_gap=15):
     time_str = format_clock_local(now)
     tw = text_w(draw, time_str, fnt)
 
@@ -90,7 +95,17 @@ def draw_clock_right(draw, right_x, y, now, fnt, fill=0, label=None,
         x = right_x - total_w
         draw.text((x, y + 2), label, font=label_font, fill=fill)
         draw.text((right_x - tw, y), time_str, font=fnt, fill=fill)
+        if show_date:
+            date_font = date_font or label_font
+            date_str = format_header_date(now)
+            dw = text_w(draw, date_str, date_font)
+            draw.text((right_x - dw, y + date_gap), date_str, font=date_font, fill=fill)
         return total_w
 
     draw.text((right_x - tw, y), time_str, font=fnt, fill=fill)
+    if show_date:
+        date_font = date_font or regular_font(config.HEADER_DATE_FONT_SIZE)
+        date_str = format_header_date(now)
+        dw = text_w(draw, date_str, date_font)
+        draw.text((right_x - dw, y + date_gap), date_str, font=date_font, fill=fill)
     return tw

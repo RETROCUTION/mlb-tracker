@@ -72,12 +72,14 @@ def _draw_header(draw, state):
         draw_clock_right(
             draw,
             W - 10,
-            14,
+            8,
             now_local,
             val_fnt,
             fill=255,
             label="ONLINE:",
             label_font=label_fnt,
+            show_date=True,
+            date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
         )
     else:
         if state.last_sync_time:

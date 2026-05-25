@@ -204,13 +204,15 @@ def _draw_header(draw, img, state):
         draw_clock_right(
             draw,
             W - 12,
-            14,
+            8,
             now_local,
             val_fnt,
             fill=255,
             label="ONLINE:",
             label_font=label_fnt,
             gap=8,
+            show_date=True,
+            date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
         )
     else:
         # Offline — show last sync time + OFFLINE badge
