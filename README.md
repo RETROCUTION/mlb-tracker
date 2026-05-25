@@ -9,16 +9,8 @@ Fresh installs require each user to choose their own team and timezone.
 
 ## Parts List
 
-Disclosure: Some product links may be affiliate links. As an Amazon Associate,
-the project maintainer may earn from qualifying purchases.
-
-- [Raspberry Pi Zero 2 W](https://www.amazon.com/s?k=Raspberry+Pi+Zero+2+W&tag=YOURTAG-20)
-- [Raspberry Pi Zero W](https://www.amazon.com/s?k=Raspberry+Pi+Zero+W&tag=YOURTAG-20)
 - [Waveshare 7.5-inch V2 black-and-white e-paper display](https://amzn.to/49SbFdX)
 - [Waveshare driver PCB / HAT for Raspberry Pi](https://amzn.to/4uCjHQM)
-- [MicroSD card](https://www.amazon.com/s?k=microSD+card+32GB&tag=YOURTAG-20)
-- [5V Raspberry Pi power supply](https://www.amazon.com/s?k=Raspberry+Pi+5V+power+supply&tag=YOURTAG-20)
-- [GPIO momentary push buttons](https://www.amazon.com/s?k=GPIO+momentary+push+button&tag=YOURTAG-20)
 
 ## Hardware
 
@@ -118,8 +110,3 @@ sudo systemctl restart mlb-tracker
 sudo systemctl status mlb-tracker --no-pager
 journalctl -u mlb-tracker -n 150 --no-pager -l
 ```
-
-## Notes
-
-Fresh installer packages should not include `settings.json`. That file is
-created by the setup wizard so every user explicitly chooses their team.

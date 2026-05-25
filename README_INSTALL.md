@@ -3,13 +3,6 @@
 MLB Tracker is a Raspberry Pi e-paper baseball dashboard for any MLB team.
 Fresh installs require the user to choose a team and timezone.
 
-## Parts
-
-Disclosure: Some product links may be affiliate links. As an Amazon Associate,
-the project maintainer may earn from qualifying purchases.
-
-See `README.md` for the current parts list.
-
 ## Recommended Pi OS
 
 For Pi Zero W, use Raspberry Pi OS Lite 32-bit.
@@ -68,5 +61,5 @@ Unzip a newer installer package and run:
 sudo ./install.sh
 ```
 
-The installer preserves the existing `settings.json`, cache, and output
-folders unless you reconfigure with the setup wizard.
+The installer preserves the existing team settings, cache, and output folders
+unless you reconfigure with the setup wizard.
