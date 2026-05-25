@@ -101,6 +101,26 @@ def _find_live_game_pk(games):
     return live_game.get("game_pk") if live_game else None
 
 
+def _find_todays_upcoming_game(games):
+    today = datetime.now(config.LOCAL_TZ).date()
+
+    for g in games:
+        if g.get("status") not in ("Preview", "Pre-Game", "Scheduled"):
+            continue
+
+        try:
+            start_utc = datetime.fromisoformat(
+                g["date_utc"].replace("Z", "+00:00")
+            )
+        except Exception:
+            continue
+
+        if start_utc.astimezone(config.LOCAL_TZ).date() == today:
+            return g
+
+    return None
+
+
 def _request_display(full=False, clear=False):
     global _force_full_next, _force_clear_next
     if full:
@@ -221,6 +241,7 @@ def _enter_live_mode(game_pk, auto=False):
         state.live_game_pk = game_pk
         state.live_final_game_data = None
         state.pregame_mode = False
+        state.pregame_manual = False
         state.pregame_game = None
         state.pregame_seconds_remaining = None
 
@@ -252,6 +273,18 @@ def _exit_live_mode(suppress_current=False):
         _live_buffer.clear()
 
     logger.info("Exited live game mode")
+    _request_display(full=True)
+
+
+def _exit_pregame_mode():
+    with _state_lock:
+        state.page = config.PAGE_BRIEFING
+        state.pregame_mode = False
+        state.pregame_manual = False
+        state.pregame_game = None
+        state.pregame_seconds_remaining = None
+
+    logger.info("Exited pregame screen")
     _request_display(full=True)
 
 
@@ -313,9 +346,29 @@ def _update_pregame_state(games):
     with _state_lock:
         if state.live_mode:
             state.pregame_mode = False
+            state.pregame_manual = False
             return
 
+        manual_pregame = state.pregame_manual
+        manual_game = state.pregame_game
+
     now_utc = datetime.now(timezone.utc)
+
+    if manual_pregame and manual_game:
+        try:
+            start_utc = datetime.fromisoformat(
+                manual_game["date_utc"].replace("Z", "+00:00")
+            )
+            seconds_remaining = max(0, int((start_utc - now_utc).total_seconds()))
+        except Exception:
+            seconds_remaining = 0
+
+        with _state_lock:
+            state.pregame_mode = True
+            state.pregame_game = manual_game
+            state.pregame_seconds_remaining = seconds_remaining
+        return
+
     pregame = None
     seconds_remaining = None
 
@@ -338,6 +391,7 @@ def _update_pregame_state(games):
 
     with _state_lock:
         state.pregame_mode = pregame is not None
+        state.pregame_manual = False
         state.pregame_game = pregame
         state.pregame_seconds_remaining = seconds_remaining
 
@@ -573,11 +627,21 @@ def _on_center_short():
         if state.live_mode:
             logger.info("CENTER short — exit live mode")
             exit_live = True
+            exit_pregame = False
+        elif state.pregame_mode:
+            logger.info("CENTER short — exit pregame screen")
+            exit_live = False
+            exit_pregame = True
         else:
             exit_live = False
+            exit_pregame = False
 
     if exit_live:
         _exit_live_mode(suppress_current=True)
+        return
+
+    if exit_pregame:
+        _exit_pregame_mode()
         return
 
     with _state_lock:
@@ -611,7 +675,7 @@ def _on_center_long():
 
 def _on_left_short():
     with _state_lock:
-        if state.live_mode or state.page != config.PAGE_SCHEDULE:
+        if state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
             return
         logger.info("LEFT short — schedule back")
         state.scroll_schedule_back()
@@ -621,7 +685,7 @@ def _on_left_short():
 
 def _on_right_short():
     with _state_lock:
-        if state.live_mode or state.page != config.PAGE_SCHEDULE:
+        if state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
             return
         logger.info("RIGHT short — schedule forward")
         state.scroll_schedule_forward()
@@ -631,7 +695,7 @@ def _on_right_short():
 
 def _on_left_long():
     with _state_lock:
-        if state.live_mode or state.page != config.PAGE_SCHEDULE:
+        if state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
             return
         logger.info("LEFT long — jump to schedule start")
         state.jump_to_game(0)
@@ -641,7 +705,7 @@ def _on_left_long():
 
 def _on_right_long():
     with _state_lock:
-        if state.live_mode or state.page != config.PAGE_SCHEDULE:
+        if state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
             return
 
     logger.info("RIGHT long — jump to next game")
@@ -661,12 +725,40 @@ def _on_live():
     game_pk = _find_live_game_pk(games)
 
     if not game_pk:
+        today_game = _find_todays_upcoming_game(games)
+        if today_game:
+            logger.info("LIVE button pressed — showing today's pregame screen")
+            now_utc = datetime.now(timezone.utc)
+            try:
+                start_utc = datetime.fromisoformat(
+                    today_game["date_utc"].replace("Z", "+00:00")
+                )
+                seconds_remaining = max(
+                    0,
+                    int((start_utc - now_utc).total_seconds()),
+                )
+            except Exception:
+                seconds_remaining = 0
+
+            with _state_lock:
+                state.page = config.PAGE_BRIEFING
+                state.live_mode = False
+                state.live_game_pk = None
+                state.live_game_data = None
+                state.pregame_mode = True
+                state.pregame_manual = True
+                state.pregame_game = today_game
+                state.pregame_seconds_remaining = seconds_remaining
+            _request_display(full=True, clear=True)
+            return
+
         logger.info("LIVE button pressed — showing no-live-game screen")
         with _state_lock:
             state.live_mode = True
             state.live_game_pk = None
             state.live_game_data = None
             state.pregame_mode = False
+            state.pregame_manual = False
             state.pregame_game = None
             state.pregame_seconds_remaining = None
         _request_display(full=True)
@@ -674,6 +766,7 @@ def _on_live():
 
     with _state_lock:
         state.live_suppressed_game_pk = None
+        state.pregame_manual = False
 
     _enter_live_mode(game_pk, auto=False)
 

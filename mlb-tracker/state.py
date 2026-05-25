@@ -17,6 +17,7 @@ class AppState:
         self.live_final_game_data = None
         self.live_suppressed_game_pk = None
         self.pregame_mode        = False
+        self.pregame_manual      = False
         self.pregame_game        = None
         self.pregame_seconds_remaining = None
 

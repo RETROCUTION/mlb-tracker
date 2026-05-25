@@ -40,6 +40,8 @@ the project maintainer may earn from qualifying purchases.
 - Pregame screen before first pitch
 - Automatic live-game mode when the selected team has a game in progress
 - Manual live-game button on GPIO 26
+- Live button opens the pregame VS screen on game day if the game has not started
+- Live button shows a no-live-game popup when there is no live or same-day upcoming game
 - Live score, inning, count, outs, pitch number, runners, runner names, and line score
 - Extra-innings line score view
 - Running seconds clock on every screen
