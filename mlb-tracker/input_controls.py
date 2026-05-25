@@ -1,5 +1,6 @@
 import time
 import logging
+import threading
 import config
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,8 @@ except ImportError:
     logger.warning("gpiozero not available — buttons disabled")
 
 _buttons = {}
+_combo_timer = None
+_combo_fired = False
 
 DEBOUNCE_SECONDS = 0.5
 _last_event_time = {}
@@ -30,6 +33,7 @@ def setup(
     on_right_short=None,
     on_right_long=None,
     on_live=None,
+    on_config_combo=None,
 ):
     _callbacks["center_short"] = on_center_short
     _callbacks["center_long"]  = on_center_long
@@ -38,6 +42,7 @@ def setup(
     _callbacks["right_short"]  = on_right_short
     _callbacks["right_long"]   = on_right_long
     _callbacks["live"]         = on_live
+    _callbacks["config_combo"] = on_config_combo
 
     if not HARDWARE_AVAILABLE:
         logger.info("Buttons disabled — no gpiozero")
@@ -134,11 +139,26 @@ def _fire(key):
 
 
 def _on_press(name):
+    global _combo_fired
+
     _press_times[name] = time.time()
+    if name in ("left", "right"):
+        _combo_fired = False
+        _maybe_start_config_combo_timer()
 
 
 def _on_release(name):
+    global _combo_fired
+
     t = _press_times.pop(name, None)
+
+    if name in ("left", "right"):
+        _cancel_config_combo_timer()
+
+    if _combo_fired:
+        if not any(k in _press_times for k in ("left", "right")):
+            _combo_fired = False
+        return
 
     if t is not None and (time.time() - t) < config.LONG_PRESS_THRESHOLD:
         if name == "live":
@@ -148,11 +168,58 @@ def _on_release(name):
 
 
 def _on_hold(name):
+    if name in ("left", "right"):
+        other = "right" if name == "left" else "left"
+        if other in _press_times:
+            logger.debug("Suppressing %s long while config combo is held", name)
+            return
+
     _press_times.pop(name, None)
     _fire(f"{name}_long")
 
 
+def _maybe_start_config_combo_timer():
+    global _combo_timer
+
+    if "left" not in _press_times or "right" not in _press_times:
+        return
+
+    if _combo_timer and _combo_timer.is_alive():
+        return
+
+    hold_seconds = float(getattr(config, "CONFIG_COMBO_HOLD_SECONDS", 3.0))
+    _combo_timer = threading.Timer(hold_seconds, _fire_config_combo_if_still_held)
+    _combo_timer.daemon = True
+    _combo_timer.start()
+
+
+def _cancel_config_combo_timer():
+    global _combo_timer
+
+    if "left" in _press_times and "right" in _press_times:
+        return
+
+    if _combo_timer:
+        _combo_timer.cancel()
+        _combo_timer = None
+
+
+def _fire_config_combo_if_still_held():
+    global _combo_timer, _combo_fired
+
+    _combo_timer = None
+    if "left" not in _press_times or "right" not in _press_times:
+        return
+
+    _combo_fired = True
+    _press_times.pop("left", None)
+    _press_times.pop("right", None)
+    _fire("config_combo")
+
+
 def cleanup():
+    _cancel_config_combo_timer()
+
     for btn in _buttons.values():
         try:
             btn.close()

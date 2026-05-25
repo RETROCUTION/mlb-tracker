@@ -8,13 +8,16 @@ from layouts import (
     layout_standings,
     layout_live,
     layout_pregame,
+    layout_config,
 )
 
 logger = logging.getLogger(__name__)
 
 
 def render(state, summary, games):
-    if state.live_mode:
+    if getattr(state, "config_mode", False):
+        img = layout_config.render(state)
+    elif state.live_mode:
         img = layout_live.render(state, state.live_game_data)
     elif getattr(state, "pregame_mode", False):
         img = layout_pregame.render(

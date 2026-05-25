@@ -288,6 +288,15 @@ def _exit_pregame_mode():
     _request_display(full=True)
 
 
+def _exit_config_mode():
+    with _state_lock:
+        state.config_mode = False
+        state.page = config.PAGE_BRIEFING
+
+    logger.info("Exited config screen")
+    _request_display(full=True)
+
+
 def _poll_live_game():
     with _state_lock:
         game_pk = state.live_game_pk if state.live_mode else None
@@ -624,17 +633,29 @@ def _data_changed(old_summary, new_summary, old_games, new_games):
 
 def _on_center_short():
     with _state_lock:
-        if state.live_mode:
+        if state.config_mode:
+            logger.info("CENTER short — exit config screen")
+            exit_config = True
+            exit_live = False
+            exit_pregame = False
+        elif state.live_mode:
             logger.info("CENTER short — exit live mode")
+            exit_config = False
             exit_live = True
             exit_pregame = False
         elif state.pregame_mode:
             logger.info("CENTER short — exit pregame screen")
+            exit_config = False
             exit_live = False
             exit_pregame = True
         else:
+            exit_config = False
             exit_live = False
             exit_pregame = False
+
+    if exit_config:
+        _exit_config_mode()
+        return
 
     if exit_live:
         _exit_live_mode(suppress_current=True)
@@ -675,7 +696,7 @@ def _on_center_long():
 
 def _on_left_short():
     with _state_lock:
-        if state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
+        if state.config_mode or state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
             return
         logger.info("LEFT short — schedule back")
         state.scroll_schedule_back()
@@ -685,7 +706,7 @@ def _on_left_short():
 
 def _on_right_short():
     with _state_lock:
-        if state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
+        if state.config_mode or state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
             return
         logger.info("RIGHT short — schedule forward")
         state.scroll_schedule_forward()
@@ -695,7 +716,7 @@ def _on_right_short():
 
 def _on_left_long():
     with _state_lock:
-        if state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
+        if state.config_mode or state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
             return
         logger.info("LEFT long — jump to schedule start")
         state.jump_to_game(0)
@@ -705,7 +726,7 @@ def _on_left_long():
 
 def _on_right_long():
     with _state_lock:
-        if state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
+        if state.config_mode or state.live_mode or state.pregame_mode or state.page != config.PAGE_SCHEDULE:
             return
 
     logger.info("RIGHT long — jump to next game")
@@ -771,6 +792,22 @@ def _on_live():
     _enter_live_mode(game_pk, auto=False)
 
 
+def _on_config_combo():
+    logger.info("LEFT+RIGHT hold — show config screen")
+
+    with _state_lock:
+        state.config_mode = True
+        state.live_mode = False
+        state.live_game_pk = None
+        state.live_game_data = None
+        state.pregame_mode = False
+        state.pregame_manual = False
+        state.pregame_game = None
+        state.pregame_seconds_remaining = None
+
+    _request_display(full=True, clear=True)
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -803,6 +840,7 @@ def main():
         on_right_short=_on_right_short,
         on_right_long=_on_right_long,
         on_live=_on_live,
+        on_config_combo=_on_config_combo,
     )
 
     logger.info("Initial render from cache")

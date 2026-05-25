@@ -34,6 +34,8 @@ Fresh installs require each user to choose their own team and timezone.
 - Manual live-game button on GPIO 26
 - Live button opens the pregame VS screen on game day if the game has not started
 - Live button shows a no-live-game popup when there is no live or same-day upcoming game
+- Left and right buttons primarily scroll the schedule screen
+- Holding left and right together for 3 seconds opens reconfiguration instructions
 - Live score, inning, count, outs, pitch number, runners, runner names, and line score
 - Live game data can poll about once per second, with a configurable broadcast delay
 - Extra-innings line score view
@@ -50,6 +52,7 @@ Buttons are optional, but the default GPIO layout is:
 | Center | 6 | Cycle screens, or exit live mode back to main screen |
 | Right | 13 | Scroll schedule forward |
 | Live | 26 | Jump to live game mode when a game is in progress |
+| Left + Right | 5 + 13 | Hold both for 3 seconds to show reconfiguration instructions |
 
 Long-press behavior is supported for the schedule navigation buttons.
 
@@ -77,6 +80,10 @@ chooses their own MLB team and timezone.
 ### Live Game
 
 ![Live game screen](docs/screenshots/live.png)
+
+### Config Help
+
+![Config help screen](docs/screenshots/config.png)
 
 ## Install
 

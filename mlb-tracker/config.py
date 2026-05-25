@@ -77,6 +77,7 @@ GPIO_BTN_CENTER       = 6
 GPIO_BTN_RIGHT        = 13
 GPIO_BTN_LIVE         = 26     # 4th button — jump to live game view
 LONG_PRESS_THRESHOLD  = 1.5
+CONFIG_COMBO_HOLD_SECONDS = 3.0
 
 # Broadcast delay — add seconds to live game polling to sync with TV broadcast
 # Set to 0 for no delay, increase if API is ahead of your broadcast
