@@ -5,8 +5,22 @@ team briefing info, schedule, MLB rankings, pregame/live game screens, running
 seconds, live scores, inning state, pitch count, runners, and e-paper friendly
 full-screen partial refresh.
 
-The project was originally built as a Dodgers tracker, but the installer now
-requires each user to choose their own team and timezone.
+Fresh installs require each user to choose their own team and timezone.
+
+## Parts List
+
+Disclosure: Some product links may be affiliate links. As an Amazon Associate,
+the project maintainer may earn from qualifying purchases.
+
+Replace `YOURTAG-20` with your Amazon Associates tracking ID before publishing
+affiliate links.
+
+- [Raspberry Pi Zero 2 W](https://www.amazon.com/s?k=Raspberry+Pi+Zero+2+W&tag=YOURTAG-20)
+- [Raspberry Pi Zero W](https://www.amazon.com/s?k=Raspberry+Pi+Zero+W&tag=YOURTAG-20)
+- [Waveshare 7.5-inch V2 black-and-white e-paper display](https://www.amazon.com/s?k=Waveshare+7.5+inch+e-Paper+V2&tag=YOURTAG-20)
+- [MicroSD card](https://www.amazon.com/s?k=microSD+card+32GB&tag=YOURTAG-20)
+- [5V Raspberry Pi power supply](https://www.amazon.com/s?k=Raspberry+Pi+5V+power+supply&tag=YOURTAG-20)
+- [GPIO momentary push buttons](https://www.amazon.com/s?k=GPIO+momentary+push+button&tag=YOURTAG-20)
 
 ## Hardware
 
