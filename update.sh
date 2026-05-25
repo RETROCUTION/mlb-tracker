@@ -63,7 +63,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [[ ! -d "$SRC_DIR" ]]; then
+use_local_source=false
+if [[ -d "$SRC_DIR" && "$SRC_DIR" != "$APP_DIR" && -f "$PACKAGE_DIR/install.sh" ]]; then
+  use_local_source=true
+fi
+
+if [[ "$use_local_source" != "true" ]]; then
   for cmd in curl unzip rsync; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
       echo "Missing required command: $cmd"
@@ -77,6 +82,8 @@ if [[ ! -d "$SRC_DIR" ]]; then
   curl -fsSL -o "$TMP_DIR/mlb-tracker-main.zip" "$REPO_ZIP_URL"
   unzip -q "$TMP_DIR/mlb-tracker-main.zip" -d "$TMP_DIR"
   SRC_DIR="$TMP_DIR/mlb-tracker-main/mlb-tracker"
+else
+  echo "Using local installer package source."
 fi
 
 if [[ ! -d "$SRC_DIR" ]]; then

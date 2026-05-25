@@ -885,11 +885,12 @@ def _on_center_short():
         state.toggle_page()
         logger.info("CENTER short — changed to page %d", state.page)
         is_schedule = state.page == config.PAGE_SCHEDULE
+        needs_clear = state.page in (config.PAGE_BRIEFING, config.PAGE_SCHEDULE)
 
     if is_schedule:
         _position_schedule()
 
-    _request_display(full=True, clear=is_schedule)
+    _request_display(full=True, clear=needs_clear)
 
 
 def _on_center_long():
