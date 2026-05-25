@@ -12,12 +12,10 @@ Fresh installs require each user to choose their own team and timezone.
 Disclosure: Some product links may be affiliate links. As an Amazon Associate,
 the project maintainer may earn from qualifying purchases.
 
-Replace `YOURTAG-20` with your Amazon Associates tracking ID before publishing
-affiliate links.
-
 - [Raspberry Pi Zero 2 W](https://www.amazon.com/s?k=Raspberry+Pi+Zero+2+W&tag=YOURTAG-20)
 - [Raspberry Pi Zero W](https://www.amazon.com/s?k=Raspberry+Pi+Zero+W&tag=YOURTAG-20)
-- [Waveshare 7.5-inch V2 black-and-white e-paper display](https://www.amazon.com/s?k=Waveshare+7.5+inch+e-Paper+V2&tag=YOURTAG-20)
+- [Waveshare 7.5-inch V2 black-and-white e-paper display](https://amzn.to/49SbFdX)
+- [Waveshare driver PCB / HAT for Raspberry Pi](https://amzn.to/4uCjHQM)
 - [MicroSD card](https://www.amazon.com/s?k=microSD+card+32GB&tag=YOURTAG-20)
 - [5V Raspberry Pi power supply](https://www.amazon.com/s?k=Raspberry+Pi+5V+power+supply&tag=YOURTAG-20)
 - [GPIO momentary push buttons](https://www.amazon.com/s?k=GPIO+momentary+push+button&tag=YOURTAG-20)
@@ -32,6 +30,59 @@ affiliate links.
   - Center: GPIO 6
   - Right: GPIO 13
   - Live game: GPIO 26
+
+## Features
+
+- First-run setup wizard for team and timezone selection
+- Briefing screen with last game, next game, record, rankings, and season outlook
+- Schedule screen with button navigation
+- MLB rankings screen
+- Pregame screen before first pitch
+- Automatic live-game mode when the selected team has a game in progress
+- Manual live-game button on GPIO 26
+- Live score, inning, count, outs, pitch number, runners, runner names, and line score
+- Extra-innings line score view
+- Running seconds clock on every screen
+- Full-screen partial refresh for fast e-paper updates
+- Per-page display inversion support for sharper schedule/rankings output
+
+## Button Wiring
+
+Buttons are optional, but the default GPIO layout is:
+
+| Button | GPIO | Action |
+| --- | ---: | --- |
+| Left | 5 | Scroll schedule backward |
+| Center | 6 | Cycle screens, or exit live mode back to main screen |
+| Right | 13 | Scroll schedule forward |
+| Live | 26 | Jump to live game mode when a game is in progress |
+
+Long-press behavior is supported for the schedule navigation buttons.
+
+## Screenshots
+
+Example screenshots are shown with one selected team. During setup, each user
+chooses their own MLB team and timezone.
+
+### Briefing
+
+![Briefing screen](docs/screenshots/briefing.png)
+
+### Schedule
+
+![Schedule screen](docs/screenshots/schedule.png)
+
+### MLB Rankings
+
+![MLB rankings screen](docs/screenshots/rankings.png)
+
+### Pregame
+
+![Pregame screen](docs/screenshots/pregame.png)
+
+### Live Game
+
+![Live game screen](docs/screenshots/live.png)
 
 ## Install
 

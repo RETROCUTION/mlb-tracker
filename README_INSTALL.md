@@ -8,8 +8,7 @@ Fresh installs require the user to choose a team and timezone.
 Disclosure: Some product links may be affiliate links. As an Amazon Associate,
 the project maintainer may earn from qualifying purchases.
 
-Before publishing, replace `YOURTAG-20` in the README parts links with your
-Amazon Associates tracking ID.
+See `README.md` for the current parts list.
 
 ## Recommended Pi OS
 
