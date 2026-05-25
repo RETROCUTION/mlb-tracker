@@ -92,7 +92,8 @@ If you choose a username other than `pi`, use that username instead.
 1. Put the SD card into the Raspberry Pi.
 2. Connect the Waveshare display and driver board.
 3. Power on the Raspberry Pi.
-4. Wait a few minutes for the first boot to finish.
+4. Wait a few minutes for the first boot to finish. It is normal for SSH to
+   take several minutes before it works the first time.
 
 ### 3. Connect With SSH
 
