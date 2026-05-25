@@ -3,7 +3,6 @@ import zoneinfo
 import settings_loader
 
 APP_NAME = "MLB Tracker"
-APP_TITLE = "MLB TRACKER"
 
 # ---------------------------------------------------------------------------
 # Preferred team override
@@ -51,6 +50,7 @@ TEAM_ABBR      = _settings["team_abbr"]
 TEAM_LOGO      = _settings["logo"]
 LOCAL_TZ       = zoneinfo.ZoneInfo(_settings["timezone"])
 TEAM_NICKNAME  = _team_nickname(TEAM_NAME)
+APP_TITLE      = f"{TEAM_NAME.upper()} TRACKER"
 
 # Keep DODGERS_TEAM_ID as an alias so existing code doesn't break
 DODGERS_TEAM_ID = TEAM_ID

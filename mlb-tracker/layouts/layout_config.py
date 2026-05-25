@@ -57,9 +57,9 @@ def render(state):
     draw.text((box_x + (box_w - url_w) // 2, box_y + 28), url, font=url_fnt, fill=0)
 
     help_lines = [
-        "The web page has dropdowns for Wi-Fi, team, and timezone.",
-        "It also has a password field and manual Wi-Fi entry.",
-        "Keyboard/terminal option: python3 scripts/setup_wizard.py --force",
+        "Browser config works only when this Pi is already on Wi-Fi.",
+        "For Wi-Fi problems, connect keyboard/HDMI to the Pi.",
+        "Then run: python3 scripts/setup_wizard.py --force",
     ]
     hy = 286
     for line in help_lines:

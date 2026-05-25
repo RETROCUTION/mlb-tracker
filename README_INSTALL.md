@@ -1,28 +1,25 @@
-# MLB Tracker Installer
+# MLB Tracker Fresh Install Guide
 
-MLB Tracker is a Raspberry Pi e-paper baseball dashboard for any MLB team.
-Fresh installs require the user to choose a team and timezone.
+This guide starts with a blank microSD card and ends with MLB Tracker running
+automatically on boot.
 
-This guide starts from a blank microSD card and walks through the full install.
 After you SSH into the Raspberry Pi, all terminal commands in this guide are
-run on the Raspberry Pi, not on your Mac or PC.
+run on the Raspberry Pi.
 
 ## What You Need
 
-- Raspberry Pi Zero W or Zero 2 W
+- Raspberry Pi Zero W or Raspberry Pi Zero 2 W
 - Waveshare 7.5-inch V2 black-and-white e-paper display
 - Waveshare driver PCB / HAT for Raspberry Pi
 - MicroSD card
 - Raspberry Pi power supply
 - A computer with Raspberry Pi Imager
 - Wi-Fi network name and password
-- Optional GPIO buttons
+- Optional momentary push buttons
 
-## Recommended Pi OS
+## Recommended Raspberry Pi OS
 
-For Pi Zero W, use Raspberry Pi OS Lite 32-bit.
-For Pi Zero 2 W, Raspberry Pi OS Lite 32-bit is still the safest shared image
-if you want one card/package to work across both boards.
+Use Raspberry Pi OS Lite 32-bit. It works well for Pi Zero W and Pi Zero 2 W.
 
 ## 1. Flash The SD Card
 
@@ -31,20 +28,23 @@ if you want one card/package to work across both boards.
 3. Choose Raspberry Pi OS Lite 32-bit.
 4. Choose your microSD card.
 5. Open OS customization before writing the card.
-6. Set the hostname to:
-
-```text
-mlb-tracker
-```
-
-This hostname is important. It lets you connect later with
-`ssh pi@mlb-tracker.local` and lets the config screen show
-`http://mlb-tracker.local:8765`.
-
+6. Set the hostname to `mlb-tracker`.
 7. Set a username and password.
 8. Configure Wi-Fi with your network name, password, country, and timezone.
 9. Enable SSH.
 10. Write the image to the SD card.
+
+The hostname `mlb-tracker` lets you connect later with:
+
+```bash
+ssh pi@mlb-tracker.local
+```
+
+It also lets the config screen show:
+
+```text
+http://mlb-tracker.local:8765
+```
 
 ## 2. First Boot
 
@@ -53,112 +53,90 @@ This hostname is important. It lets you connect later with
 3. Power on the Raspberry Pi.
 4. Wait a few minutes for first boot.
 
-From your computer, connect with SSH. Replace `pi` if you chose a different
-username in Raspberry Pi Imager:
+## 3. Connect With SSH
+
+From your computer, open Terminal and run:
 
 ```bash
 ssh pi@mlb-tracker.local
 ```
 
-This opens a terminal session on the Raspberry Pi so you can install MLB
-Tracker from your computer.
+If you chose a username other than `pi`, replace `pi` with your username.
 
-If that hostname does not work, find the Pi's IP address from your router and
-connect with:
+If the hostname does not work, find the Pi's IP address in your router and run:
 
 ```bash
 ssh pi@YOUR_PI_IP_ADDRESS
 ```
 
-## 3. Install Required Tools
+## 4. Install MLB Tracker
 
-On the Raspberry Pi:
+Copy and paste this whole block into the Raspberry Pi terminal:
 
 ```bash
 sudo apt update
-sudo apt install -y git curl unzip
-```
-
-What these commands do:
-
-- `sudo apt update` refreshes the Raspberry Pi package list.
-- `sudo apt install -y git curl unzip` installs the tools needed to download
-  and unpack MLB Tracker.
-
-## 4. Download And Install MLB Tracker
-
-Copy and paste these commands into the SSH terminal on the Raspberry Pi:
-
-```bash
+sudo apt install -y curl unzip
 curl -L -o mlb-tracker-installer.zip https://github.com/RETROCUTION/mlb-tracker/releases/download/v0.1.0/mlb-tracker-installer.zip
 unzip mlb-tracker-installer.zip
 cd mlb-tracker-installer
 sudo ./install.sh
 ```
 
-What these commands do:
+What this does:
 
-- `curl -L -o mlb-tracker-installer.zip ...` downloads the latest installer
-  from GitHub.
+- `sudo apt update` refreshes the Raspberry Pi package list.
+- `sudo apt install -y curl unzip` installs tools for downloading and unzipping.
+- `curl -L -o mlb-tracker-installer.zip ...` downloads MLB Tracker from GitHub.
 - `unzip mlb-tracker-installer.zip` extracts the installer files.
-- `cd mlb-tracker-installer` moves into the installer folder.
-- `sudo ./install.sh` runs the installer with administrator permissions.
+- `cd mlb-tracker-installer` opens the installer folder.
+- `sudo ./install.sh` runs the installer.
 
-The installer will:
+The installer:
 
-- install Python dependencies
-- enable SPI
-- install the Waveshare e-Paper Python driver
-- install MLB Tracker to `~/mlb-tracker`
-- create `mlb-tracker.service`
-- run the setup wizard so the user chooses team and timezone
+- Installs required Raspberry Pi packages.
+- Enables SPI for the Waveshare display.
+- Installs the Waveshare e-paper Python driver.
+- Copies MLB Tracker to `~/mlb-tracker`.
+- Creates the `mlb-tracker` system service.
+- Starts the setup wizard.
 
-Follow the setup prompts to choose your team and timezone. If Wi-Fi was not
-configured in Raspberry Pi Imager, the setup wizard can help configure it from
-an attached keyboard/display.
+Choose your team and timezone when prompted.
 
-## Alternative: Download First, Install Later
-
-If you already downloaded the installer zip manually, start here instead:
-
-```bash
-unzip mlb-tracker-installer.zip
-cd mlb-tracker-installer
-sudo ./install.sh
-```
-
-## 5. Verify It Is Running
+## 5. Check That It Is Running
 
 ```bash
 sudo systemctl status mlb-tracker --no-pager
 ```
 
-To watch logs:
+This shows whether the service is active.
+
+To view recent logs:
 
 ```bash
 journalctl -u mlb-tracker -n 150 --no-pager -l
 ```
 
-The service is enabled automatically and starts again after reboot.
+Logs help diagnose display, Wi-Fi, or MLB API connection issues.
 
-## Offseason Behavior
+## Reconfigure Later
 
-MLB Tracker rolls seasons forward automatically. After the World Series, it can
-continue showing the completed season's final scores, schedule, and rankings.
-Before the next season begins, the briefing screen shows an offseason notice so
-the display still remains useful instead of going blank.
+### With Buttons
 
-## Button Reconfiguration Shortcut
+Use this when the Raspberry Pi is already connected to Wi-Fi.
 
-Hold LEFT and RIGHT together for 3 seconds to open config mode. The e-paper
-display shows a local web address. Open that address on a phone or computer on
-the same Wi-Fi network to use dropdowns for Wi-Fi, team, and timezone, plus a
-password field.
+Hold Left and Right together for 3 seconds. The display shows the local config
+address. Open that address on a phone or computer on the same Wi-Fi network to
+change team or timezone.
 
-If you connect a keyboard/display to the Raspberry Pi or prefer SSH, you can
-also reconfigure from the terminal with these commands.
+This method cannot help if the Pi is not connected to Wi-Fi, because your phone
+or computer will not be able to reach the config page.
 
-## Terminal Reconfiguration
+### With Keyboard Or Terminal
+
+Use this for Wi-Fi changes, team changes, timezone changes, or Wi-Fi recovery.
+
+If Wi-Fi still works, SSH into the Raspberry Pi. If Wi-Fi is broken, connect a
+keyboard and HDMI display to the Pi, log in, and run:
 
 ```bash
 cd ~/mlb-tracker
@@ -167,28 +145,41 @@ python3 scripts/setup_wizard.py --force
 sudo systemctl start mlb-tracker
 ```
 
-What these commands do:
+What this does:
 
-- `cd ~/mlb-tracker` moves into the installed MLB Tracker folder.
-- `sudo systemctl stop mlb-tracker` stops the display service while you change settings.
-- `python3 scripts/setup_wizard.py --force` opens the terminal setup wizard.
-- `sudo systemctl start mlb-tracker` starts the display service again.
+- Opens the installed project folder.
+- Stops the display service while settings are changed.
+- Runs the setup wizard again for Wi-Fi, team, and timezone.
+- Starts the display service again.
 
-## Useful Commands
+## Service Commands
+
+Check service status:
 
 ```bash
 sudo systemctl status mlb-tracker --no-pager
+```
+
+Restart the tracker:
+
+```bash
 sudo systemctl restart mlb-tracker
+```
+
+View recent logs:
+
+```bash
 journalctl -u mlb-tracker -n 150 --no-pager -l
 ```
 
-## Updating
-
-Unzip a newer installer package and run:
+## Update Later
 
 ```bash
+curl -L -o mlb-tracker-installer.zip https://github.com/RETROCUTION/mlb-tracker/releases/download/v0.1.0/mlb-tracker-installer.zip
+unzip -o mlb-tracker-installer.zip
+cd mlb-tracker-installer
 sudo ./install.sh
 ```
 
-The installer preserves the existing team settings, cache, and output folders
-unless you reconfigure with the setup wizard.
+The installer keeps your existing team settings, cache, and output folders
+unless you run the setup wizard again.

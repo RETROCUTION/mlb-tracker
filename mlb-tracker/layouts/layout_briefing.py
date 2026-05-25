@@ -189,12 +189,12 @@ def _draw_header(draw, img, state):
     if logo:
         img.paste(logo, (LOGO_X, LOGO_Y))
 
-    draw.text(
-        (TITLE_X, 14),
-        config.APP_TITLE,
-        font=bold_font(18),
-        fill=255
-    )
+    title = config.APP_TITLE
+    title_size = 18
+    max_title_w = 390
+    while title_size > 12 and text_w(draw, title, bold_font(title_size)) > max_title_w:
+        title_size -= 1
+    draw.text((TITLE_X, 14), title, font=bold_font(title_size), fill=255)
 
     label_fnt = regular_font(9)
     val_fnt   = regular_font(HEADER_DT_SIZE)
