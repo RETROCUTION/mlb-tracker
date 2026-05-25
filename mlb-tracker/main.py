@@ -1191,8 +1191,18 @@ def main():
             _do_render()
 
             now = time.time()
-            sleep_for = DISPLAY_TICK_SECONDS - (now % DISPLAY_TICK_SECONDS)
-            time.sleep(max(0.01, sleep_for))
+            elapsed = now - loop_start
+
+            if elapsed >= DISPLAY_TICK_SECONDS:
+                logger.debug(
+                    "Display loop overran %.2fs tick by %.2fs; rendering next frame immediately",
+                    DISPLAY_TICK_SECONDS,
+                    elapsed - DISPLAY_TICK_SECONDS,
+                )
+                time.sleep(0.01)
+            else:
+                sleep_for = DISPLAY_TICK_SECONDS - (now % DISPLAY_TICK_SECONDS)
+                time.sleep(max(0.01, min(sleep_for, DISPLAY_TICK_SECONDS - elapsed)))
 
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt — shutting down")

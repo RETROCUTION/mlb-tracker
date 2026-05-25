@@ -183,7 +183,7 @@ def render(state, summary, games):
 
 
 def _draw_header(draw, img, state):
-    draw.rectangle([0, 0, W, HEADER_H], fill=0)
+    draw.rectangle([0, 0, W, HEADER_H + 2], fill=0)
 
     logo = _load_logo()
     if logo:
