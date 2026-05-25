@@ -10,7 +10,7 @@ Layout:
   - Game time and venue at bottom
 
 Partial refresh zone for countdown:
-  ZONE_COUNTDOWN = (0, 360, 800, 430)
+  ZONE_COUNTDOWN = inside the two horizontal divider lines
 """
 
 from PIL import Image, ImageDraw
@@ -20,7 +20,7 @@ from datetime import datetime
 import config
 from layouts.draw_utils import (
     bold_font, regular_font, score_font,
-    draw_hline, text_w, draw_clock_right
+    draw_hline, text_w, text_h, draw_clock_right
 )
 
 logger = logging.getLogger(__name__)
@@ -29,8 +29,10 @@ W = config.MASTER_W
 H = config.MASTER_H
 
 LOGO_SIZE     = 150    # large logos for the VS screen
-ZONE_COUNTDOWN_Y1 = 310
-ZONE_COUNTDOWN_Y2 = 410
+TEAM_DIVIDER_Y = 258
+FOOTER_DIVIDER_Y = 410
+ZONE_COUNTDOWN_Y1 = TEAM_DIVIDER_Y + 8
+ZONE_COUNTDOWN_Y2 = FOOTER_DIVIDER_Y - 8
 
 _logo_cache = {}
 
@@ -208,7 +210,7 @@ def _draw_team_names(draw, game):
     draw.text((3 * W // 4 - rlw // 2, label_y), right_label, font=label_fnt, fill=0)
 
     # Divider
-    draw_hline(draw, 0, 258, W, thickness=1)
+    draw_hline(draw, 0, TEAM_DIVIDER_Y, W, thickness=1)
 
 
 def _draw_countdown(draw, seconds_remaining):
@@ -216,14 +218,15 @@ def _draw_countdown(draw, seconds_remaining):
     zone_y = ZONE_COUNTDOWN_Y1
     zone_h = ZONE_COUNTDOWN_Y2 - ZONE_COUNTDOWN_Y1
 
-    # Clear zone
+    # Clear inside the divider lines, leaving the lines themselves untouched.
     draw.rectangle([0, zone_y, W, ZONE_COUNTDOWN_Y2], fill=255)
 
     if seconds_remaining <= 0:
         msg     = "PLAY BALL!"
         msg_fnt = bold_font(36)
         mw      = text_w(draw, msg, msg_fnt)
-        draw.text(((W - mw) // 2, zone_y + 8), msg, font=msg_fnt, fill=0)
+        mh      = text_h(draw, msg, msg_fnt)
+        draw.text(((W - mw) // 2, zone_y + (zone_h - mh) // 2), msg, font=msg_fnt, fill=0)
         return
 
     seconds_remaining = max(0, int(seconds_remaining))
@@ -236,11 +239,16 @@ def _draw_countdown(draw, seconds_remaining):
     lbl_fnt  = regular_font(13)
     time_fnt = score_font(64)
 
+    lbl_h = text_h(draw, lbl_str, lbl_fnt)
+    time_h = text_h(draw, time_str, time_fnt)
+    gap = 4
+    block_y = zone_y + (zone_h - lbl_h - gap - time_h) // 2 - 2
+
     lw = text_w(draw, lbl_str, lbl_fnt)
-    draw.text(((W - lw) // 2, zone_y + 4), lbl_str, font=lbl_fnt, fill=0)
+    draw.text(((W - lw) // 2, block_y), lbl_str, font=lbl_fnt, fill=0)
 
     tw = text_w(draw, time_str, time_fnt)
-    draw.text(((W - tw) // 2, zone_y + 20), time_str, font=time_fnt, fill=0)
+    draw.text(((W - tw) // 2, block_y + lbl_h + gap), time_str, font=time_fnt, fill=0)
 
 
 def _matchup_sides(game):
@@ -267,7 +275,7 @@ def _draw_footer(draw, game):
     from datetime import datetime
     TZ = config.LOCAL_TZ
 
-    draw_hline(draw, 0, ZONE_COUNTDOWN_Y2, W, thickness=1)
+    draw_hline(draw, 0, FOOTER_DIVIDER_Y, W, thickness=1)
 
     try:
         dt_utc   = datetime.fromisoformat(game["date_utc"].replace("Z", "+00:00"))
@@ -287,7 +295,7 @@ def _draw_footer(draw, game):
 
     if date_str:
         dw = text_w(draw, date_str, date_fnt)
-        draw.text(((W - dw) // 2, ZONE_COUNTDOWN_Y2 + 8), date_str, font=date_fnt, fill=0)
+        draw.text(((W - dw) // 2, FOOTER_DIVIDER_Y + 8), date_str, font=date_fnt, fill=0)
 
     iw  = text_w(draw, info_str, info_fnt)
-    draw.text(((W - iw) // 2, ZONE_COUNTDOWN_Y2 + 30), info_str, font=info_fnt, fill=0)
+    draw.text(((W - iw) // 2, FOOTER_DIVIDER_Y + 30), info_str, font=info_fnt, fill=0)
