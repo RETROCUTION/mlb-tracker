@@ -165,12 +165,12 @@ def render(state, summary, games):
     draw = ImageDraw.Draw(img)
 
     _logo_paste_info.clear()
-    _draw_header(draw, img, state)
     _draw_left_panel(draw, games)
     _draw_next_game(draw, games, summary)
     _draw_body_dividers(draw)
     _draw_record_bar(draw, summary)
     _draw_outlook_bar(draw, summary)
+    _draw_header(draw, img, state)
 
     # Paste opponent logo if next game section loaded one
     if "opp_logo" in _logo_paste_info:
@@ -243,7 +243,7 @@ def _draw_header(draw, img, state):
 
 def _draw_body_dividers(draw):
     section_w = W // 2
-    draw_vline(draw, section_w, BODY_Y, BODY_H, thickness=1)
+    draw_vline(draw, section_w, BODY_Y + 1, BODY_H - 1, thickness=1)
     draw_hline(draw, 0, BODY_Y + BODY_H, W, thickness=1)
 
 
