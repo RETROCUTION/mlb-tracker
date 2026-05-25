@@ -1,6 +1,6 @@
 import os
 import logging
-from PIL import Image
+from PIL import Image, ImageDraw
 import config
 from layouts import (
     layout_briefing,
@@ -41,3 +41,25 @@ def render(state, summary, games):
         logger.info("Rendered page %d to %s", state.page, out_path)
 
     return img
+
+
+def update_dynamic_header(img, state):
+    """Redraw only the clock/status header into an existing full-frame image."""
+    if img is None:
+        return False
+
+    draw = ImageDraw.Draw(img)
+
+    if state.page == config.PAGE_BRIEFING:
+        layout_briefing._draw_header(draw, img, state)
+        return True
+
+    if state.page == config.PAGE_SCHEDULE:
+        layout_schedule._draw_header(draw, img, state, None)
+        return True
+
+    if state.page == config.PAGE_STANDINGS:
+        layout_standings._draw_header(draw, state)
+        return True
+
+    return False

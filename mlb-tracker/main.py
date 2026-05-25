@@ -82,6 +82,8 @@ _display_generation = 0
 _was_online = False
 _input_transition_active = False
 _clock_paused = False
+_last_frame_img = None
+_last_frame_signature = None
 
 
 # ---------------------------------------------------------------------------
@@ -694,13 +696,54 @@ def _screen_signature():
         )
 
 
+def _can_tick_header(signature):
+    with _state_lock:
+        return (
+            not state.config_mode
+            and not state.live_mode
+            and not state.pregame_mode
+            and state.page in (
+                config.PAGE_BRIEFING,
+                config.PAGE_SCHEDULE,
+                config.PAGE_STANDINGS,
+            )
+            and _last_frame_img is not None
+            and _last_frame_signature == signature
+        )
+
+
+def _try_header_tick(force_full=False):
+    if force_full or _has_forced_display_pending():
+        return False
+
+    signature = _screen_signature()
+    if not _can_tick_header(signature):
+        return False
+
+    if not render.update_dynamic_header(_last_frame_img, state):
+        return False
+
+    invert = _should_invert_display()
+    display_waveshare.show_partial_fullscreen(_last_frame_img, invert=invert)
+    logger.debug(
+        "Display updated header tick — screen=%s invert=%s",
+        _screen_name(),
+        invert,
+    )
+    _finish_button_action()
+    return True
+
+
 def _do_render(force_full=False):
-    global _last_full_refresh
+    global _last_full_refresh, _last_frame_img, _last_frame_signature
 
     if _is_clock_paused() and not force_full and not _has_forced_display_pending():
         return
 
     with _render_lock:
+        if _try_header_tick(force_full=force_full):
+            return
+
         img = None
         stable_generation = None
         stable_signature = None
@@ -735,6 +778,7 @@ def _do_render(force_full=False):
         ):
             logger.info("Screen changed before display; refreshing frame")
             img = _render_to_img()
+            stable_signature = _screen_signature()
 
         invert = _should_invert_display()
         now = time.time()
@@ -765,6 +809,8 @@ def _do_render(force_full=False):
                 invert,
             )
 
+        _last_frame_img = img
+        _last_frame_signature = stable_signature
         _finish_button_action()
 
 

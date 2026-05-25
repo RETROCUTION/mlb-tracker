@@ -97,7 +97,12 @@ def _draw_header(draw, img, state, games):
         fill=255
     )
 
-    total_pages = max(1, -(-len(games) // PAGE_SIZE))
+    game_count = (
+        len(games)
+        if games is not None
+        else getattr(state, "schedule_game_count", 0)
+    )
+    total_pages = max(1, -(-game_count // PAGE_SIZE))
     current_page = (state.schedule_offset // PAGE_SIZE) + 1
     page_str = f"Page {current_page} / {total_pages}"
 
