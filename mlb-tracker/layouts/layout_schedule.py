@@ -79,6 +79,8 @@ def render(state, games):
 
 
 def _draw_header(draw, img, state, games):
+    draw.rectangle([0, 0, W, HEADER_H], fill=0)
+
     logo = _load_logo()
     if logo:
         img.paste(logo, (6, 5))
@@ -92,37 +94,39 @@ def _draw_header(draw, img, state, games):
         (46, 12),
         f"{config.TEAM_NICKNAME.upper()} SCHEDULE  {getattr(state, 'display_season', config.CURRENT_SEASON)}",
         font=title_fnt,
-        fill=0
+        fill=255
     )
 
     total_pages = max(1, -(-len(games) // PAGE_SIZE))
     current_page = (state.schedule_offset // PAGE_SIZE) + 1
     page_str = f"Page {current_page} / {total_pages}"
 
-    draw_clock_right(draw, W - 12, 3, datetime.now(TZ), clock_fnt, fill=0)
+    draw_clock_right(draw, W - 12, 3, datetime.now(TZ), clock_fnt, fill=255)
 
-    draw.text((W - 220, 24), "< PREV", font=nav_fnt, fill=0)
+    draw.text((W - 220, 24), "< PREV", font=nav_fnt, fill=255)
 
     pw = text_w(draw, page_str, page_fnt)
-    draw.text((W - 120 - pw // 2, 25), page_str, font=page_fnt, fill=0)
+    draw.text((W - 120 - pw // 2, 25), page_str, font=page_fnt, fill=255)
 
-    draw.text((W - 56, 24), "NEXT >", font=nav_fnt, fill=0)
+    draw.text((W - 56, 24), "NEXT >", font=nav_fnt, fill=255)
 
-    draw_hline(draw, 0, HEADER_H - 1, W, thickness=3, fill=0)
+    draw_hline(draw, 0, HEADER_H - 1, W, thickness=1, fill=0)
 
 
 def _draw_column_headers(draw):
     hdr_y = HEADER_H
+    draw.rectangle([0, hdr_y, W, hdr_y + COL_HDR_H], fill=0)
 
     fnt = bold_font(12)
+    fill = 255
 
-    draw.text((COL["date"], hdr_y + 8), "DATE", font=fnt, fill=0)
-    draw.text((COL["opp"], hdr_y + 8), "OPPONENT", font=fnt, fill=0)
-    draw.text((COL["ha"], hdr_y + 8), "H/A", font=fnt, fill=0)
-    draw.text((COL["score"], hdr_y + 8), "SCORE / TIME", font=fnt, fill=0)
-    draw.text((COL["result"], hdr_y + 8), "W/L", font=fnt, fill=0)
+    draw.text((COL["date"], hdr_y + 8), "DATE", font=fnt, fill=fill)
+    draw.text((COL["opp"], hdr_y + 8), "OPPONENT", font=fnt, fill=fill)
+    draw.text((COL["ha"], hdr_y + 8), "H/A", font=fnt, fill=fill)
+    draw.text((COL["score"], hdr_y + 8), "SCORE / TIME", font=fnt, fill=fill)
+    draw.text((COL["result"], hdr_y + 8), "W/L", font=fnt, fill=fill)
 
-    draw_hline(draw, 0, hdr_y + COL_HDR_H - 1, W, thickness=3, fill=0)
+    draw_hline(draw, 0, hdr_y + COL_HDR_H, W, thickness=1, fill=0)
 
 
 def _draw_rows(draw, state, games):
@@ -153,11 +157,9 @@ def _draw_rows(draw, state, games):
         fg = 255 if is_next else 0
 
         if is_next:
-            # This reverse-video row becomes a white highlight after the
-            # schedule screen is inverted at display-output time.
             draw.rectangle([0, y, W, y + ROW_H - 1], fill=0)
 
-        draw_hline(draw, 0, y + ROW_H - 1, W, thickness=2, fill=fg)
+        draw_hline(draw, 0, y + ROW_H - 1, W, thickness=1, fill=0)
 
         dt_utc = datetime.fromisoformat(g["date_utc"].replace("Z", "+00:00"))
         dt_local = dt_utc.astimezone(TZ)
