@@ -103,6 +103,7 @@ OUTPUT_DIR = "output"
 # slow a Pi Zero W enough to make the clock skip seconds.
 SAVE_RENDER_OUTPUT = False
 SAVE_DISPLAY_DEBUG_IMAGES = False
+LOG_DISPLAY_TIMING = False
 
 MLB_BASE_URL = "https://statsapi.mlb.com/api/v1"
 

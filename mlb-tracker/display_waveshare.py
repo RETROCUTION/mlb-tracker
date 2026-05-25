@@ -139,8 +139,9 @@ def show_partial_fullscreen(image, invert=False):
         done = time.monotonic()
         _partial_count += 1
 
+        timing_logs_enabled = getattr(config, "LOG_DISPLAY_TIMING", False)
         slow_refresh = done - start >= 0.95
-        should_log_timing = (
+        should_log_timing = timing_logs_enabled and (
             done - _last_partial_timing_log >= 30
             or (slow_refresh and done - _last_partial_timing_log >= 10)
         )
