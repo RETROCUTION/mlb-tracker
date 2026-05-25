@@ -9,7 +9,8 @@ from layouts.draw_utils import (
     bold_font, regular_font, score_font,
     draw_text_centered, draw_hline, draw_vline,
     text_w, text_h, format_date_long, format_time_local,
-    format_datetime_short, ordinal, draw_clock_right
+    format_datetime_short, format_clock_local, format_header_date,
+    ordinal, draw_clock_right
 )
 
 TZ = config.LOCAL_TZ
@@ -201,18 +202,23 @@ def _draw_header(draw, img, state):
     now_local = datetime.now(TZ)
 
     if not state.stale:
-        draw_clock_right(
-            draw,
-            W - 12,
-            8,
-            now_local,
-            val_fnt,
+        stats_center_x = OPP_STATS_X_OFF + OPP_STATS_COL_W // 2
+        time_str = format_clock_local(now_local, show_seconds=False)
+        date_str = format_header_date(now_local)
+        date_fnt = regular_font(config.HEADER_DATE_FONT_SIZE)
+        time_w = text_w(draw, time_str, val_fnt)
+        date_w = text_w(draw, date_str, date_fnt)
+        time_x = stats_center_x - time_w // 2
+
+        label_str = "ONLINE:"
+        label_w = text_w(draw, label_str, label_fnt)
+        draw.text((time_x - label_w - 8, 10), label_str, font=label_fnt, fill=255)
+        draw.text((time_x, 8), time_str, font=val_fnt, fill=255)
+        draw.text(
+            (stats_center_x - date_w // 2, 23),
+            date_str,
+            font=date_fnt,
             fill=255,
-            label="ONLINE:",
-            label_font=label_fnt,
-            gap=8,
-            show_date=True,
-            date_font=regular_font(config.HEADER_DATE_FONT_SIZE),
         )
     else:
         # Offline — show last sync time + OFFLINE badge
