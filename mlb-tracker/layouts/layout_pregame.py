@@ -98,6 +98,17 @@ def render_countdown_zone(state, game, seconds_remaining):
     return img
 
 
+def update_dynamic(img, state, game, seconds_remaining):
+    """Redraw the live parts of the upcoming-game screen in an existing image."""
+    if img is None or game is None:
+        return False
+
+    draw = ImageDraw.Draw(img)
+    _draw_header(draw, state, game)
+    _draw_countdown(draw, seconds_remaining)
+    return True
+
+
 def _draw_header(draw, state, game):
     draw.rectangle([0, 0, W, 44], fill=0)
 

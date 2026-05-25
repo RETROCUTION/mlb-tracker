@@ -564,6 +564,30 @@ def _maybe_enter_live_from_pregame(now=None):
     _request_display(full=True, clear=True)
 
 
+def _refresh_pregame_countdown_from_state():
+    with _state_lock:
+        if not state.pregame_mode or not state.pregame_game:
+            return False
+
+        game = state.pregame_game
+
+    try:
+        start_utc = datetime.fromisoformat(
+            game["date_utc"].replace("Z", "+00:00")
+        )
+        seconds = int((start_utc - datetime.now(timezone.utc)).total_seconds())
+    except Exception:
+        seconds = 0
+
+    with _state_lock:
+        if not state.pregame_mode or state.pregame_game != game:
+            return False
+
+        state.pregame_seconds_remaining = max(0, seconds)
+
+    return True
+
+
 # ---------------------------------------------------------------------------
 # Render
 # ---------------------------------------------------------------------------
@@ -766,11 +790,34 @@ def _can_tick_header(signature):
         )
 
 
+def _can_tick_pregame(signature):
+    with _state_lock:
+        return (
+            not state.config_mode
+            and not state.live_mode
+            and state.pregame_mode
+            and _last_frame_img is not None
+            and _last_frame_signature == signature
+        )
+
+
 def _try_header_tick(force_full=False):
     if force_full or _has_forced_display_pending():
         return False
 
     signature = _screen_signature()
+    if _can_tick_pregame(signature):
+        if not _refresh_pregame_countdown_from_state():
+            return False
+
+        if not render.update_dynamic_pregame(_last_frame_img, state):
+            return False
+
+        display_waveshare.show_partial_fullscreen(_last_frame_img, invert=False)
+        logger.debug("Display updated upcoming-game countdown tick")
+        _finish_button_action()
+        return True
+
     if not _can_tick_header(signature):
         return False
 

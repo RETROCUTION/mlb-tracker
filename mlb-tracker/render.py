@@ -63,3 +63,12 @@ def update_dynamic_header(img, state):
         return True
 
     return False
+
+
+def update_dynamic_pregame(img, state):
+    return layout_pregame.update_dynamic(
+        img,
+        state,
+        state.pregame_game,
+        state.pregame_seconds_remaining or 0,
+    )

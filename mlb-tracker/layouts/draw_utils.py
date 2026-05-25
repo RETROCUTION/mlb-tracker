@@ -102,7 +102,8 @@ def draw_clock_right(draw, right_x, y, now, fnt, fill=0, label=None,
             date_font = date_font or label_font
             date_str = format_header_date(now)
             dw = text_w(draw, date_str, date_font)
-            draw.text((right_x - dw, y + date_gap), date_str, font=date_font, fill=fill)
+            date_x = (right_x - tw) + ((tw - dw) // 2)
+            draw.text((date_x, y + date_gap), date_str, font=date_font, fill=fill)
         return total_w
 
     draw.text((right_x - tw, y), time_str, font=fnt, fill=fill)
@@ -110,5 +111,6 @@ def draw_clock_right(draw, right_x, y, now, fnt, fill=0, label=None,
         date_font = date_font or regular_font(config.HEADER_DATE_FONT_SIZE)
         date_str = format_header_date(now)
         dw = text_w(draw, date_str, date_font)
-        draw.text((right_x - dw, y + date_gap), date_str, font=date_font, fill=fill)
+        date_x = (right_x - tw) + ((tw - dw) // 2)
+        draw.text((date_x, y + date_gap), date_str, font=date_font, fill=fill)
     return tw
