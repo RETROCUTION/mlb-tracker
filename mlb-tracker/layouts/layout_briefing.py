@@ -136,6 +136,26 @@ def _team_nickname(team_name):
     return team_name.split()[-1]
 
 
+def _fit_font(draw, text, maker, start_size, max_w, min_size=9):
+    size = start_size
+    fnt = maker(size)
+    while size > min_size and text_w(draw, text, fnt) > max_w:
+        size -= 1
+        fnt = maker(size)
+    return fnt
+
+
+def _draw_team_name_block(draw, center_x, y, line1, line2, max_w):
+    line1_fnt = _fit_font(draw, line1, regular_font, LG_TEAM_LINE1_SIZE, max_w, min_size=9)
+    line2_fnt = _fit_font(draw, line2, bold_font, LG_TEAM_LINE2_SIZE, max_w, min_size=10)
+
+    line1_w = text_w(draw, line1, line1_fnt)
+    line2_w = text_w(draw, line2, line2_fnt)
+
+    draw.text((center_x - line1_w // 2, y - 28), line1, font=line1_fnt, fill=0)
+    draw.text((center_x - line2_w // 2, y - 16), line2, font=line2_fnt, fill=0)
+
+
 def _find_live_game(games):
     for g in games:
         if g["status"] == "Live":
@@ -378,37 +398,15 @@ def _draw_game_score(draw, game, is_live, games=None):
     score_y     = section_y + LG_SCORE_Y
     opp_score_x = start_x + lad_w + LG_SCORE_GAP + dash_w + LG_SCORE_GAP
 
-    line1_fnt = regular_font(LG_TEAM_LINE1_SIZE)
-    line2_fnt = bold_font(LG_TEAM_LINE2_SIZE)
-
     lad_line1, lad_line2 = _split_team_name(config.TEAM_NAME)
     opp_line1, opp_line2 = _split_team_name(game["opponent_name"])
 
-    lad_l1_w = text_w(draw, lad_line1, line1_fnt)
-    lad_l2_w = text_w(draw, lad_line2, line2_fnt)
     lad_cx   = start_x + lad_w // 2
-
-    draw.text(
-        (lad_cx - lad_l1_w // 2, score_y - 28),
-        lad_line1, font=line1_fnt, fill=0
-    )
-    draw.text(
-        (lad_cx - lad_l2_w // 2, score_y - 16),
-        lad_line2, font=line2_fnt, fill=0
-    )
-
-    opp_l1_w = text_w(draw, opp_line1, line1_fnt)
-    opp_l2_w = text_w(draw, opp_line2, line2_fnt)
     opp_cx   = opp_score_x + opp_w // 2
+    team_name_max_w = max(78, abs(opp_cx - lad_cx) - 12)
 
-    draw.text(
-        (opp_cx - opp_l1_w // 2, score_y - 28),
-        opp_line1, font=line1_fnt, fill=0
-    )
-    draw.text(
-        (opp_cx - opp_l2_w // 2, score_y - 16),
-        opp_line2, font=line2_fnt, fill=0
-    )
+    _draw_team_name_block(draw, lad_cx, score_y, lad_line1, lad_line2, team_name_max_w)
+    _draw_team_name_block(draw, opp_cx, score_y, opp_line1, opp_line2, team_name_max_w)
 
     draw.text((start_x, score_y), lad_str, font=lad_fnt, fill=0)
     draw.text(
@@ -669,21 +667,26 @@ def _draw_next_game(draw, games, summary=None):
     opp_logo = _load_opp_logo(opp_abbr, 36)
     opp_y    = section_y + NG_OPP_Y
 
-    # Team name first, then logo to the right
+    # Team name first, then logo held inside the main text area.
     opp_name_str = f"vs {opp_name}"
-    name_x       = section_x + 10
-    draw.text(
-        (name_x, opp_y),
-        opp_name_str,
-        font=bold_font(NG_OPP_SIZE),
-        fill=0
-    )
+    name_x       = main_area_x
+    opp_fnt      = bold_font(NG_OPP_SIZE)
+    name_max_w   = main_area_w
 
     if opp_logo:
-        logo_x = name_x + text_w(draw, opp_name_str, bold_font(NG_OPP_SIZE)) + 10
+        logo_x = main_area_x + main_area_w - 36
+        name_max_w = max(80, logo_x - name_x - 8)
         _logo_paste_info["opp_logo"]   = opp_logo
         _logo_paste_info["opp_logo_x"] = logo_x
         _logo_paste_info["opp_logo_y"] = opp_y - 4
+
+    opp_fnt = _fit_font(draw, opp_name_str, bold_font, NG_OPP_SIZE, name_max_w, min_size=11)
+    draw.text(
+        (name_x, opp_y),
+        opp_name_str,
+        font=opp_fnt,
+        fill=0
+    )
 
     ha = "Home" if nxt["home_away"] == "home" else "Away"
     venue = nxt.get("venue", "")
@@ -922,7 +925,7 @@ def _draw_outlook_bar(draw, summary):
     label_str = "WORLD SERIES CHANCES:"
     label_x   = 12
     label_fnt = regular_font(OUT_LABEL_SIZE)
-    val_fnt   = bold_font(OUT_VAL_SIZE)
+    val_fnt   = regular_font(OUT_VAL_SIZE)
 
     draw.text((label_x, bar_y + 10), label_str, font=label_fnt, fill=0)
 

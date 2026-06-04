@@ -53,6 +53,18 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+
+def _log_thread_exception(args):
+    logger.error(
+        "Unhandled exception in thread %s",
+        args.thread.name if args.thread else "<unknown>",
+        exc_info=(args.exc_type, args.exc_value, args.exc_traceback),
+    )
+
+
+threading.excepthook = _log_thread_exception
+
+
 # ---------------------------------------------------------------------------
 # Timing
 # ---------------------------------------------------------------------------
@@ -66,6 +78,8 @@ PREGAME_POST_START_GRACE_SECONDS = 10 * 60
 PREGAME_LIVE_CHECK_INTERVAL = 5
 PREGAME_API_POLL_LEAD_SECONDS = 15
 BOOT_DELAY = 0
+STARTUP_CONNECTIVITY_WAIT_SECONDS = 75
+STARTUP_CONNECTIVITY_POLL_SECONDS = 5
 
 
 def _seconds_until_start(start_utc, now_utc=None, clamp=True):
@@ -233,6 +247,28 @@ def _set_online_state(value):
 def _get_online_state():
     with _state_lock:
         return _was_online
+
+
+def _wait_for_startup_connectivity():
+    deadline = time.time() + STARTUP_CONNECTIVITY_WAIT_SECONDS
+    attempt = 1
+
+    while True:
+        if sync_manager.check_connectivity():
+            if attempt > 1:
+                logger.info("Connectivity available after startup wait")
+            return True
+
+        remaining = deadline - time.time()
+        if remaining <= 0:
+            return False
+
+        logger.info(
+            "Waiting for connectivity on startup (%ds remaining)",
+            int(remaining),
+        )
+        time.sleep(min(STARTUP_CONNECTIVITY_POLL_SECONDS, remaining))
+        attempt += 1
 
 
 # ---------------------------------------------------------------------------
@@ -1280,7 +1316,7 @@ def main():
     logger.info("Initial render from cache")
     _do_render(force_full=True)
 
-    online = sync_manager.check_connectivity()
+    online = _wait_for_startup_connectivity()
     _set_online_state(online)
 
     if online:
@@ -1349,4 +1385,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        logger.exception("Tracker crashed with unhandled exception")
+        raise

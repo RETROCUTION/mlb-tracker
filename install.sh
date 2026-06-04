@@ -144,6 +144,16 @@ EOF
 
 systemctl daemon-reload
 
+install -d /etc/systemd/system/mlb-tracker.service.d
+cat > /etc/systemd/system/mlb-tracker.service.d/repair.conf <<EOF
+[Service]
+Environment=PYTHONFAULTHANDLER=1
+ExecStartPre=/bin/sleep 20
+StandardError=append:$APP_DIR/mlb-tracker.stderr.log
+EOF
+
+systemctl daemon-reload
+
 if [[ -f "$APP_DIR/settings.json" ]]; then
   echo "Existing settings found. Enabling MLB Tracker service."
   systemctl disable mlb-tracker-setup.service >/dev/null 2>&1 || true

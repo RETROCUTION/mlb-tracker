@@ -105,6 +105,15 @@ install -d -o "$INSTALL_USER" -g "$INSTALL_USER" "$APP_DIR/cache" "$APP_DIR/outp
 chown -R "$INSTALL_USER:$INSTALL_USER" "$APP_DIR"
 chmod +x "$APP_DIR/scripts/setup_wizard.py"
 
+install -d /etc/systemd/system/mlb-tracker.service.d
+cat > /etc/systemd/system/mlb-tracker.service.d/repair.conf <<EOF
+[Service]
+Environment=PYTHONFAULTHANDLER=1
+ExecStartPre=/bin/sleep 20
+StandardError=append:$APP_DIR/mlb-tracker.stderr.log
+EOF
+
+systemctl daemon-reload
 systemctl restart "$SERVICE_NAME.service"
 
 echo
