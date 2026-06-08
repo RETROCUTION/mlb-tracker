@@ -12,8 +12,20 @@ APP_NAME = "MLB Tracker"
 # ---------------------------------------------------------------------------
 PREFERRED_TEAM_ABBR = None
 
+TEAM_DISPLAY_NAME_OVERRIDES = {
+    "Arizona Diamondbacks": "Arizona D-backs",
+}
+
+TEAM_SPLIT_NAME_OVERRIDES = {
+    "Arizona Diamondbacks": ("ARIZONA", "D-BACKS"),
+}
+
 
 def _team_nickname(team_name):
+    display_name = TEAM_DISPLAY_NAME_OVERRIDES.get(team_name)
+    if display_name:
+        return display_name.split()[-1]
+
     multi_word = (
         "Blue Jays",
         "Red Sox",

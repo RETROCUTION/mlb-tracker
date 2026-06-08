@@ -108,6 +108,9 @@ def _load_logo():
 def _split_team_name(name):
     clean = " ".join((name or "").strip().split())
 
+    if clean in config.TEAM_SPLIT_NAME_OVERRIDES:
+        return config.TEAM_SPLIT_NAME_OVERRIDES[clean]
+
     for team in getattr(settings_loader, "ALL_TEAMS", []):
         if team.get("team_name", "").lower() == clean.lower():
             full_name = team["team_name"]
@@ -123,6 +126,10 @@ def _split_team_name(name):
 
 
 def _team_nickname(team_name):
+    display_name = config.TEAM_DISPLAY_NAME_OVERRIDES.get(team_name)
+    if display_name:
+        return display_name.split()[-1]
+
     multi_word = (
         "Blue Jays",
         "Red Sox",
@@ -134,6 +141,11 @@ def _team_nickname(team_name):
             return nickname
 
     return team_name.split()[-1]
+
+
+def _display_team_name(name):
+    clean = " ".join((name or "").strip().split())
+    return config.TEAM_DISPLAY_NAME_OVERRIDES.get(clean, clean)
 
 
 def _fit_font(draw, text, maker, start_size, max_w, min_size=9):
@@ -343,7 +355,7 @@ def _draw_game_score(draw, game, is_live, games=None):
         vs_x = section_x + 10 + label_w + 8
 
     if is_live:
-        vs_str = f"vs {game.get('opponent_name', '')}"
+        vs_str = f"vs {_display_team_name(game.get('opponent_name', ''))}"
         draw.text(
             (vs_x, section_y + LG_LABEL_Y),
             vs_str,
@@ -662,7 +674,7 @@ def _draw_next_game(draw, games, summary=None):
     )
 
     opp_abbr = nxt.get("opponent_abbr", "OPP")
-    opp_name = nxt.get("opponent_name", "")
+    opp_name = _display_team_name(nxt.get("opponent_name", ""))
     opp_id   = nxt.get("opponent_id")
     opp_logo = _load_opp_logo(opp_abbr, 36)
     opp_y    = section_y + NG_OPP_Y
