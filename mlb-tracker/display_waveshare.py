@@ -1,4 +1,5 @@
 import logging
+import errno
 import os
 import time
 from PIL import ImageOps
@@ -20,6 +21,7 @@ _epd = None
 _partial_ready = False
 _partial_count = 0
 _last_partial_timing_log = 0.0
+_display_error_count = 0
 
 
 def _get_epd():
@@ -32,6 +34,34 @@ def _get_epd():
         _epd = epd_module.EPD()
 
     return _epd
+
+
+def _mark_display_success():
+    global _display_error_count
+    _display_error_count = 0
+
+
+def _handle_display_error(operation, error):
+    global _partial_ready, _display_error_count
+
+    _partial_ready = False
+    _display_error_count += 1
+    logger.error(
+        "Display %s error (%d consecutive): %s",
+        operation,
+        _display_error_count,
+        error,
+    )
+
+    threshold = int(getattr(config, "DISPLAY_FAILURE_RESTART_THRESHOLD", 3))
+    if getattr(error, "errno", None) == errno.EMFILE or _display_error_count >= threshold:
+        logger.critical(
+            "Restarting tracker after display %s failure; systemd will relaunch service",
+            operation,
+        )
+        os._exit(75)
+
+    return False
 
 
 def prepare_for_display(image, invert=False):
@@ -64,15 +94,17 @@ def init_display(clear=True):
     """
     epd = _get_epd()
     if epd is None:
-        return
+        return True
 
     try:
         epd.init()
         if clear:
             epd.Clear()
+        _mark_display_success()
         logger.info("Display initialized%s", " and cleared" if clear else "")
+        return True
     except Exception as e:
-        logger.error("Display init error: %s", e)
+        return _handle_display_error("init", e)
 
 
 def show_full(image, invert=False, clear_first=False):
@@ -86,7 +118,7 @@ def show_full(image, invert=False, clear_first=False):
 
     epd = _get_epd()
     if epd is None:
-        return
+        return True
 
     try:
         epd.init()
@@ -100,9 +132,10 @@ def show_full(image, invert=False, clear_first=False):
             "Display updated full%s; partial mode ready",
             " after clear" if clear_first else "",
         )
+        _mark_display_success()
+        return True
     except Exception as e:
-        _partial_ready = False
-        logger.error("Display full refresh error: %s", e)
+        return _handle_display_error("full refresh", e)
 
 
 def show_partial_fullscreen(image, invert=False):
@@ -119,7 +152,7 @@ def show_partial_fullscreen(image, invert=False):
 
     epd = _get_epd()
     if epd is None:
-        return
+        return True
 
     try:
         if not _partial_ready:
@@ -159,9 +192,10 @@ def show_partial_fullscreen(image, invert=False):
             )
         else:
             logger.debug("Display updated partial fullscreen")
+        _mark_display_success()
+        return True
     except Exception as e:
-        _partial_ready = False
-        logger.error("Display partial refresh error: %s", e)
+        return _handle_display_error("partial refresh", e)
 
 
 def show(image, invert=False):
@@ -181,15 +215,17 @@ def clear():
 
     epd = _get_epd()
     if epd is None:
-        return
+        return True
 
     try:
         epd.init()
         epd.Clear()
         _partial_ready = False
+        _mark_display_success()
         logger.info("Display cleared")
+        return True
     except Exception as e:
-        logger.error("Display clear error: %s", e)
+        return _handle_display_error("clear", e)
 
 
 def sleep():
@@ -197,11 +233,13 @@ def sleep():
 
     epd = _get_epd()
     if epd is None:
-        return
+        return True
 
     try:
         epd.sleep()
         _partial_ready = False
+        _mark_display_success()
         logger.info("Display sleeping")
+        return True
     except Exception as e:
-        logger.error("Display sleep error: %s", e)
+        return _handle_display_error("sleep", e)

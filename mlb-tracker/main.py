@@ -80,6 +80,11 @@ PREGAME_API_POLL_LEAD_SECONDS = 15
 BOOT_DELAY = 0
 STARTUP_CONNECTIVITY_WAIT_SECONDS = 75
 STARTUP_CONNECTIVITY_POLL_SECONDS = 5
+MAINTENANCE_RESTART_INTERVAL = getattr(
+    config,
+    "MAINTENANCE_RESTART_INTERVAL_SECONDS",
+    24 * 60 * 60,
+)
 
 
 def _seconds_until_start(start_utc, now_utc=None, clamp=True):
@@ -123,6 +128,7 @@ _clock_paused = False
 _last_frame_img = None
 _last_frame_signature = None
 _last_pregame_live_check = 0.0
+_last_maintenance_postpone_log = 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -448,6 +454,36 @@ def _restart_after_config_save():
         display_waveshare.sleep()
     finally:
         os._exit(0)
+
+
+def _restart_for_maintenance():
+    logger.info("Maintenance restart requested; systemd will relaunch tracker")
+    try:
+        input_controls.cleanup()
+        display_waveshare.sleep()
+    finally:
+        os._exit(0)
+
+
+def _maybe_maintenance_restart(start_time, now):
+    global _last_maintenance_postpone_log
+
+    if MAINTENANCE_RESTART_INTERVAL <= 0:
+        return
+
+    if now - start_time < MAINTENANCE_RESTART_INTERVAL:
+        return
+
+    with _state_lock:
+        busy = state.live_mode or state.pregame_mode or state.config_mode
+
+    if busy:
+        if now - _last_maintenance_postpone_log >= 300:
+            logger.info("Maintenance restart due but postponed because tracker is active")
+            _last_maintenance_postpone_log = now
+        return
+
+    _restart_for_maintenance()
 
 
 def _poll_live_game():
@@ -1300,7 +1336,6 @@ def main():
     os.makedirs(config.CACHE_DIR, exist_ok=True)
 
     display_waveshare.init_display(clear=True)
-    _position_schedule()
 
     input_controls.setup(
         on_center_short=_on_center_short,
@@ -1313,9 +1348,6 @@ def main():
         on_config_combo=_on_config_combo,
     )
 
-    logger.info("Initial render from cache")
-    _do_render(force_full=True)
-
     online = _wait_for_startup_connectivity()
     _set_online_state(online)
 
@@ -1323,14 +1355,18 @@ def main():
         _do_sync()
         _position_schedule()
         _handle_auto_live(_load_games())
-        _request_display(full=True)
     else:
         logger.warning("Offline on startup — showing cached data")
         with _state_lock:
             state.stale = True
+        _position_schedule()
+
+    logger.info("Initial render")
+    _do_render(force_full=True)
 
     last_sync_time = time.time()
     last_live_poll_time = 0.0
+    process_start_time = time.time()
 
     logger.info("Entering main loop")
 
@@ -1345,6 +1381,8 @@ def main():
             focus_countdown = _pregame_should_focus_countdown()
 
             if not focus_countdown:
+                _maybe_maintenance_restart(process_start_time, loop_start)
+
                 if (
                     live_game_pk
                     and _get_online_state()
