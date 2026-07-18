@@ -60,6 +60,19 @@ def fetch_live_game(game_pk):
     return resp.json()
 
 
+def _normalize_game_state(game_state, status_detail):
+    detail = (status_detail or "").strip().lower()
+
+    if "postponed" in detail:
+        return "Postponed"
+    if "suspended" in detail:
+        return "Suspended"
+    if "cancel" in detail:
+        return "Canceled"
+
+    return game_state
+
+
 def parse_live_game(raw):
     """
     Parse the live game feed into a flat dict that layout_live.py can use.
@@ -73,6 +86,7 @@ def parse_live_game(raw):
         status      = game_data.get("status", {})
         abstract    = status.get("abstractGameState", "")
         detail      = status.get("detailedState", "")
+        abstract    = _normalize_game_state(abstract, detail)
 
         # Teams — get both full name and abbreviation
         teams       = game_data.get("teams", {})
@@ -239,6 +253,7 @@ def parse_live_game(raw):
             "game_pk":       raw.get("gamePk"),
             "status":        abstract,
             "status_detail": detail,
+            "status_reason": status.get("reason", ""),
             "away_name":     away_name,
             "away_abbr":     away_abbr,
             "home_name":     home_name,
@@ -294,6 +309,8 @@ def parse_schedule(raw):
             status = g.get("status", {})
             game_state    = status.get("abstractGameState", "Preview")
             status_detail = status.get("detailedState", "")
+            status_reason = status.get("reason", "")
+            game_state    = _normalize_game_state(game_state, status_detail)
             linescore = g.get("linescore", {})
             ls_teams  = linescore.get("teams", {})
 
@@ -330,6 +347,7 @@ def parse_schedule(raw):
                 "date_utc":    g.get("gameDate", ""),
                 "status":      game_state,
                 "status_detail": status_detail,
+                "status_reason": status_reason,
                 "home_away":   "home" if is_home else "away",
                 "venue":       g.get("venue", {}).get("name", ""),
                 "opponent_id":    opp_side.get("team", {}).get("id"),
@@ -367,11 +385,16 @@ def parse_world_series_summary(raw, season):
             home_score = home.get("score")
             status = g.get("status", {})
 
+            status_detail = status.get("detailedState", "")
             games.append({
                 "game_pk": g.get("gamePk"),
                 "date_utc": g.get("gameDate", ""),
-                "status": status.get("abstractGameState", ""),
-                "status_detail": status.get("detailedState", ""),
+                "status": _normalize_game_state(
+                    status.get("abstractGameState", ""),
+                    status_detail,
+                ),
+                "status_detail": status_detail,
+                "status_reason": status.get("reason", ""),
                 "away_name": away_team.get("name", ""),
                 "home_name": home_team.get("name", ""),
                 "away_score": away_score,

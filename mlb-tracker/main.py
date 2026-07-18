@@ -80,6 +80,7 @@ PREGAME_API_POLL_LEAD_SECONDS = 15
 BOOT_DELAY = 0
 STARTUP_CONNECTIVITY_WAIT_SECONDS = 75
 STARTUP_CONNECTIVITY_POLL_SECONDS = 5
+SPECIAL_GAME_STATUSES = ("Postponed", "Suspended", "Canceled")
 MAINTENANCE_RESTART_INTERVAL = getattr(
     config,
     "MAINTENANCE_RESTART_INTERVAL_SECONDS",
@@ -335,7 +336,7 @@ def _remember_final_live_game(game_pk, live_data):
 
     sample = dict(live_data)
     sample["game_pk"] = game_pk
-    if sample.get("status") != "Final":
+    if sample.get("status") not in ("Final", *SPECIAL_GAME_STATUSES):
         sample["status"] = "Final"
 
     with _state_lock:
@@ -795,6 +796,19 @@ def _merge_live_data_into_games(games):
             updated["strikes"] = merge_data.get("strikes")
             updated["outs"] = merge_data.get("outs")
             updated["pitch_number"] = merge_data.get("pitch_number")
+        elif status in SPECIAL_GAME_STATUSES:
+            updated["status"] = status
+            updated["status_detail"] = merge_data.get("status_detail", status)
+            updated["status_reason"] = merge_data.get("status_reason", "")
+            updated["dodgers_score"] = None
+            updated["opponent_score"] = None
+            updated["inning"] = ""
+            updated["inning_half"] = ""
+            updated["balls"] = None
+            updated["strikes"] = None
+            updated["outs"] = None
+            updated["pitch_number"] = None
+            updated["result"] = None
         else:
             updated["status"] = "Final"
             updated["status_detail"] = merge_data.get("status_detail", "Final")

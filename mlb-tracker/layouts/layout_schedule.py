@@ -269,6 +269,41 @@ def _draw_rows(draw, state, games):
                 fill=fg,
             )
 
+        elif status in ("Postponed", "Suspended", "Canceled"):
+            label = status.upper()
+            reason = (g.get("status_reason") or g.get("status_detail") or "").upper()
+
+            _draw_centered(
+                draw,
+                COL["score"],
+                mid_y - 14,
+                COL_W["score"],
+                label,
+                bold_font(12),
+                fill=fg,
+            )
+
+            if reason and reason != label:
+                _draw_centered(
+                    draw,
+                    COL["score"],
+                    mid_y + 3,
+                    COL_W["score"],
+                    reason,
+                    regular_font(8),
+                    fill=fg,
+                )
+
+            _draw_centered(
+                draw,
+                COL["result"],
+                mid_y - 7,
+                COL_W["result"],
+                "-",
+                result_fnt,
+                fill=fg,
+            )
+
         elif status == "Live":
             lad = g.get("dodgers_score") or 0
             opp = g.get("opponent_score") or 0

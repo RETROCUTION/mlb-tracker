@@ -74,6 +74,7 @@ OUT_VAL_SIZE       = 15
 OUT_BAR_H          = 10
 OUT_IDX_SIZE       = 11
 OUT_BG_FILL        = 255
+SPECIAL_GAME_STATUSES = ("Postponed", "Suspended", "Canceled")
 
 # ---------------------------------------------------------------------------
 
@@ -183,10 +184,72 @@ def _find_last_completed(games):
     return last
 
 
+def _is_special_game(g):
+    return g and g.get("status") in SPECIAL_GAME_STATUSES
+
+
+def _find_current_special_game(games):
+    today = datetime.now(TZ).date()
+    candidates = []
+
+    for g in games:
+        if not _is_special_game(g):
+            continue
+
+        try:
+            dt_utc = datetime.fromisoformat(g["date_utc"].replace("Z", "+00:00"))
+        except Exception:
+            continue
+
+        game_date = dt_utc.astimezone(TZ).date()
+        day_delta = abs((game_date - today).days)
+        if day_delta <= 1:
+            candidates.append((day_delta, dt_utc, g))
+
+    if not candidates:
+        return None
+
+    candidates.sort(key=lambda item: (item[0], item[1]), reverse=False)
+    return candidates[0][2]
+
+
 def _find_next_game(games):
     for g in games:
         if g["status"] in ("Preview", "Pre-Game", "Scheduled"):
             return g
+    return None
+
+
+def _find_makeup_game(games, special_game):
+    if not special_game:
+        return None
+
+    game_pk = special_game.get("game_pk")
+    try:
+        special_dt = datetime.fromisoformat(
+            special_game["date_utc"].replace("Z", "+00:00")
+        )
+    except Exception:
+        special_dt = None
+
+    for g in games:
+        if g is special_game:
+            continue
+        if game_pk and g.get("game_pk") != game_pk:
+            continue
+        if g.get("status") not in ("Preview", "Pre-Game", "Scheduled"):
+            continue
+
+        if special_dt:
+            try:
+                dt_utc = datetime.fromisoformat(g["date_utc"].replace("Z", "+00:00"))
+            except Exception:
+                continue
+            if dt_utc <= special_dt:
+                continue
+
+        return g
+
     return None
 
 
@@ -294,8 +357,101 @@ def _draw_left_panel(draw, games):
     if live:
         _draw_game_score(draw, live, is_live=True, games=games)
     else:
-        last = _find_last_completed(games)
-        _draw_game_score(draw, last, is_live=False, games=games)
+        special = _find_current_special_game(games)
+        if special:
+            _draw_special_game_status(draw, special, games)
+        else:
+            last = _find_last_completed(games)
+            _draw_game_score(draw, last, is_live=False, games=games)
+
+
+def _draw_special_game_status(draw, game, games):
+    section_x = 0
+    section_y = BODY_Y
+    section_w = W // 2
+
+    series = _get_series_info(games or [], game)
+    label_text = f"TODAY'S GAME - {series}" if series else "TODAY'S GAME"
+    draw.text(
+        (section_x + 10, section_y + LG_LABEL_Y),
+        label_text,
+        font=bold_font(LG_LABEL_SIZE),
+        fill=0,
+    )
+
+    dt_utc = datetime.fromisoformat(game["date_utc"].replace("Z", "+00:00"))
+    dt_local = dt_utc.astimezone(TZ)
+    date_str = format_date_long(dt_local)
+    time_str = format_time_local(dt_local)
+    draw.text(
+        (section_x + 10, section_y + LG_DATE_Y),
+        f"{date_str}  {time_str}",
+        font=regular_font(13),
+        fill=0,
+    )
+
+    ha = "Home" if game["home_away"] == "home" else "Away"
+    draw.text(
+        (section_x + 10, section_y + LG_VENUE_Y),
+        f"{ha}  |  {game['venue']}",
+        font=regular_font(12),
+        fill=0,
+    )
+
+    opp_name = _display_team_name(game.get("opponent_name", ""))
+    matchup = f"vs {opp_name}"
+    matchup_fnt = _fit_font(draw, matchup, bold_font, 22, section_w - 30, min_size=14)
+    matchup_w = text_w(draw, matchup, matchup_fnt)
+    draw.text(
+        (section_x + (section_w - matchup_w) // 2, section_y + 86),
+        matchup,
+        font=matchup_fnt,
+        fill=0,
+    )
+
+    status_text = game.get("status", "Postponed").upper()
+    status_fnt = score_font(56)
+    status_w = text_w(draw, status_text, status_fnt)
+    draw.text(
+        (section_x + (section_w - status_w) // 2, section_y + 118),
+        status_text,
+        font=status_fnt,
+        fill=0,
+    )
+
+    reason = (game.get("status_reason") or game.get("status_detail") or "").upper()
+    if reason and reason != status_text:
+        reason_fnt = bold_font(16)
+        reason_w = text_w(draw, reason, reason_fnt)
+        draw.text(
+            (section_x + (section_w - reason_w) // 2, section_y + 176),
+            reason,
+            font=reason_fnt,
+            fill=0,
+        )
+
+    makeup = _find_makeup_game(games or [], game)
+    if makeup:
+        makeup_dt_utc = datetime.fromisoformat(makeup["date_utc"].replace("Z", "+00:00"))
+        makeup_dt = makeup_dt_utc.astimezone(TZ)
+        draw_text_centered(
+            draw,
+            section_x,
+            section_y + 222,
+            section_w,
+            "RESCHEDULED FOR",
+            bold_font(14),
+            fill=0,
+        )
+        draw_text_centered(
+            draw,
+            section_x,
+            section_y + 242,
+            section_w,
+            f"{format_date_long(makeup_dt)}  {format_time_local(makeup_dt)}",
+            bold_font(18),
+            fill=0,
+        )
 
 
 def _draw_game_score(draw, game, is_live, games=None):
@@ -389,9 +545,13 @@ def _draw_game_score(draw, game, is_live, games=None):
         lad_size = LG_SCORE_SIZE_LIV
         opp_size = LG_SCORE_SIZE_LIV
     else:
-        lad_wins = lad_score > opp_score
-        lad_size = LG_SCORE_SIZE_WIN if lad_wins else LG_SCORE_SIZE_LOS
-        opp_size = LG_SCORE_SIZE_LOS if lad_wins else LG_SCORE_SIZE_WIN
+        if lad_score == opp_score:
+            lad_size = LG_SCORE_SIZE_LOS
+            opp_size = LG_SCORE_SIZE_LOS
+        else:
+            lad_wins = lad_score > opp_score
+            lad_size = LG_SCORE_SIZE_WIN if lad_wins else LG_SCORE_SIZE_LOS
+            opp_size = LG_SCORE_SIZE_LOS if lad_wins else LG_SCORE_SIZE_WIN
 
     lad_fnt  = score_font(lad_size)
     opp_fnt  = score_font(opp_size)
